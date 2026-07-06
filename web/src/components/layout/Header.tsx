@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import logo256 from '../../../public/logo_256.png';
+import logo256 from '/logo_256.png';
 import { Button, ThemeToggle } from '../ui/Button';
 
 const navigationLinks = [
