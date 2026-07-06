@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from decouple import config
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,13 +22,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-aa6@u8j5#o66_$$5i0rr@x980oo4_a0jm&1pa*zulg7z%j6fbn'
+SECRET_KEY = config("DJANGO_SECRET_KEY")
+DEBUG = config("DJANGO_DEBUG", cast=bool, default=False)
+ALLOWED_HOSTS = config(
+    "DJANGO_ALLOWED_HOSTS",
+    cast=lambda value: [host.strip() for host in value.split(",")],
+    default="localhost",
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+)
 
 # Application definition
 
@@ -73,10 +76,12 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    "default": dj_database_url.parse(
+        config("DATABASE_URL"),
+        conn_max_age=600,
+
+    )
+
 }
 
 
