@@ -1,16 +1,16 @@
-import './App.css'
-import HomePage from './pages/HomePage'
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import HomePage from './pages/HomePage';
+import EventsPage from './pages/EventsPage';
 
 function App() {
-
   return (
-    <div className="App">
-      <BrowserRouter>
-        <HomePage />
-      </BrowserRouter>
-    </div>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/events" element={<EventsPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
