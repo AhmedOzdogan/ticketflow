@@ -1,0 +1,252 @@
+
+
+# -----------------------------------------------------------------------------
+# TicketFlow root .gitignore
+# Monorepo: React web app, Django API, Express payments service
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# macOS / system files
+# -----------------------------------------------------------------------------
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+
+# -----------------------------------------------------------------------------
+# Windows / Linux system files
+# -----------------------------------------------------------------------------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+*~
+
+# -----------------------------------------------------------------------------
+# Editor / IDE files
+# -----------------------------------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+*.tmp
+*.temp
+
+# -----------------------------------------------------------------------------
+# Environment variables and secrets
+# Keep .env.example files committed.
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local secret files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+*.keystore
+secrets/
+*.secret
+
+# -----------------------------------------------------------------------------
+# Logs
+# -----------------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# -----------------------------------------------------------------------------
+# Node / JavaScript / TypeScript
+# -----------------------------------------------------------------------------
+node_modules/
+**/node_modules/
+.pnpm-store/
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Build outputs
+web/dist/
+payments/dist/
+dist/
+dist-ssr/
+build/
+.cache/
+.parcel-cache/
+.vite/
+
+# TypeScript
+*.tsbuildinfo
+
+# Test outputs
+coverage/
+**/coverage/
+.nyc_output/
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Vitest / Jest
+.vitest/
+junit.xml
+
+# -----------------------------------------------------------------------------
+# React / Vite
+# -----------------------------------------------------------------------------
+web/.env
+web/.env.*
+!web/.env.example
+web/dist/
+web/build/
+web/.vite/
+web/node_modules/
+
+# -----------------------------------------------------------------------------
+# Express payments service
+# -----------------------------------------------------------------------------
+payments/.env
+payments/.env.*
+!payments/.env.example
+payments/node_modules/
+payments/dist/
+payments/build/
+payments/coverage/
+
+# -----------------------------------------------------------------------------
+# Python / Django
+# -----------------------------------------------------------------------------
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+api/.venv/
+api/venv/
+api/env/
+.venv/
+venv/
+env/
+ENV/
+
+# Django local files
+api/db.sqlite3
+api/db.sqlite3-journal
+api/media/
+api/staticfiles/
+api/local_settings.py
+
+# Django / Python test and coverage files
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Python packaging
+*.egg-info/
+.eggs/
+build/
+dist/
+site/
+*.egg
+MANIFEST
+pip-wheel-metadata/
+
+# -----------------------------------------------------------------------------
+# PostgreSQL / database dumps
+# -----------------------------------------------------------------------------
+*.dump
+*.sql
+*.sqlite
+*.sqlite3
+postgres-data/
+pgdata/
+
+# Keep migration files committed.
+# Do not ignore api/**/migrations/*.py.
+
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
+.docker/
+docker-data/
+*.pid
+
+# -----------------------------------------------------------------------------
+# Kubernetes local files
+# -----------------------------------------------------------------------------
+.kube/
+kubeconfig*
+*.kubeconfig
+
+# -----------------------------------------------------------------------------
+# Terraform / infrastructure tools, if added later
+# -----------------------------------------------------------------------------
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# -----------------------------------------------------------------------------
+# Temporary files
+# -----------------------------------------------------------------------------
+tmp/
+temp/
+.tmp/
+.temp/
+
+# -----------------------------------------------------------------------------
+# Uploaded/generated files for local development
+# -----------------------------------------------------------------------------
+uploads/
+downloads/
+exports/
+reports/
+
+# -----------------------------------------------------------------------------
+# Stripe local testing
+# -----------------------------------------------------------------------------
+.stripe/
+stripe.log
+
+# -----------------------------------------------------------------------------
+# Optional local notes
+# -----------------------------------------------------------------------------
+notes.local.md
+TODO.local.md
