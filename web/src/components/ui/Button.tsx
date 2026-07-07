@@ -11,6 +11,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
     variant?: ButtonVariant;
     size?: ButtonSize;
     fullWidth?: boolean;
+    disabled?: boolean;
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
@@ -36,6 +37,7 @@ export function Button({
     fullWidth = false,
     className = '',
     type = 'button',
+    disabled = false,
     ...props
 }: ButtonProps) {
     const buttonClasses = `inline-flex items-center justify-center gap-2 rounded-full font-bold transition duration-200 hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-50 ${variantClasses[variant]} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className}`;
