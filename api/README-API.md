@@ -220,25 +220,163 @@ REFUNDED
 
 ---
 
-## Planned API Endpoints
+## API Endpoints
 
-### Authentication
+### Users and Authentication
 
-```txt
-POST /api/auth/register/buyer/
-POST /api/auth/register/organizer/
-POST /api/auth/login/
-POST /api/auth/token/refresh/
-GET  /api/auth/me/
-```
-
-### Organizer Approval
+Base path:
 
 ```txt
-GET   /api/admin/organizer-applications/
-PATCH /api/admin/organizer-applications/:id/approve/
-PATCH /api/admin/organizer-applications/:id/reject/
+/api/users/
 ```
+
+| Method | Endpoint | Description | Auth Required |
+|---|---|---|---|
+| POST | `/api/users/register/` | Register a new buyer or organizer and return JWT tokens | No |
+| POST | `/api/users/login/` | Login with email and password and return JWT tokens | No |
+| POST | `/api/users/logout/` | Logout by blacklisting the refresh token | Yes |
+| POST | `/api/users/token/refresh/` | Generate a new access token from a refresh token | No |
+| GET | `/api/users/me/` | Get the current logged-in user profile | Yes |
+| PATCH | `/api/users/me/` | Update the current logged-in user profile | Yes |
+| PUT | `/api/users/me/` | Replace the current logged-in user profile | Yes |
+| POST | `/api/users/change-password/` | Change the current logged-in user's password | Yes |
+| PATCH | `/api/users/organizers/<uuid:pk>/approve/` | Approve or reject an organizer account | Admin only |
+| PUT | `/api/users/organizers/<uuid:pk>/approve/` | Replace organizer approval status | Admin only |
+```
+
+#### Authentication Request Examples
+
+Buyer registration:
+
+```json
+{
+  "email": "buyer@example.com",
+  "password": "StrongPass123!",
+  "confirm_password": "StrongPass123!",
+  "first_name": "Ahmed",
+  "last_name": "Ozdogan",
+  "phone_number": "+49123456789",
+  "role": "buyer"
+}
+```
+
+Organizer registration:
+
+```json
+{
+  "email": "organizer@example.com",
+  "password": "StrongPass123!",
+  "confirm_password": "StrongPass123!",
+  "first_name": "Event",
+  "last_name": "Manager",
+  "phone_number": "+49123456789",
+  "role": "organizer",
+  "company_name": "TicketFlow Events",
+  "website_url": "https://example.com",
+  "organizer_details": "We organize concerts, conferences, and community events."
+}
+```
+
+Login:
+
+```json
+{
+  "email": "buyer@example.com",
+  "password": "StrongPass123!"
+}
+```
+
+Successful register/login response:
+
+```json
+{
+  "access": "jwt-access-token",
+  "refresh": "jwt-refresh-token",
+  "user": {
+    "id": "user-uuid",
+    "email": "buyer@example.com",
+    "first_name": "Ahmed",
+    "last_name": "Ozdogan",
+    "phone_number": "+49123456789",
+    "role": "buyer",
+    "is_email_verified": false,
+    "organizer_approval_status": "not_applicable",
+    "profile_image_url": "",
+    "organizer_profile": null
+  }
+}
+```
+
+Refresh token:
+
+```json
+{
+  "refresh": "jwt-refresh-token"
+}
+```
+
+Logout:
+
+```json
+{
+  "refresh": "jwt-refresh-token"
+}
+```
+
+Update current user:
+
+```json
+{
+  "first_name": "Ahmed",
+  "last_name": "Ozdogan",
+  "phone_number": "+49123456789",
+  "profile_image_url": "https://example.com/avatar.png"
+}
+```
+
+Change password:
+
+```json
+{
+  "old_password": "OldPass123!",
+  "new_password": "NewStrongPass123!",
+  "confirm_password": "NewStrongPass123!"
+}
+```
+
+Approve organizer:
+
+```json
+{
+  "organizer_approval_status": "approved"
+}
+```
+
+Reject organizer:
+
+```json
+{
+  "organizer_approval_status": "rejected",
+  "rejection_reason": "Company details are incomplete."
+}
+```
+
+### Organizer Approval Notes
+
+Organizer approval is currently handled through the users app:
+
+```txt
+PATCH /api/users/organizers/<uuid:pk>/approve/
+```
+
+Allowed approval values:
+
+```txt
+approved
+rejected
+```
+
+When an organizer is approved or rejected, the organizer profile stores `reviewed_at`. If the organizer is rejected, `rejection_reason` is required.
 
 ### Events
 
@@ -447,18 +585,31 @@ Later CI should run:
 Completed:
 
 - API folder created
-- Django setup in progress
-- Package plan prepared
+- Django project configured
+- PostgreSQL configured through `DATABASE_URL`
+- Django REST Framework added
+- Simple JWT authentication added
+- JWT token blacklist app added for logout
+- Custom user model created
+- Email-based authentication backend added
+- User serializers created
+- User permissions created
+- User views created
+- User URLs created
+- Buyer registration endpoint created
+- Organizer registration endpoint created
+- Login endpoint created
+- Logout endpoint created
+- Token refresh endpoint created
+- Current user endpoint created
+- Profile update endpoint created
+- Change password endpoint created
+- Organizer approval endpoint created
 
 Next API steps:
 
-- Create Django project
-- Configure settings
-- Add Django REST Framework
-- Add CORS
-- Add Simple JWT
-- Add PostgreSQL configuration
-- Create custom user model
-- Add buyer and organizer registration endpoints
-- Add login endpoint
+- Connect `apps.users.urls` in `config/urls.py` if not already connected
+- Run migrations for Simple JWT blacklist tables
+- Test all authentication endpoints with curl, Postman, or DRF browsable API
 - Add tests for authentication
+- Start the Events app models and endpoints
