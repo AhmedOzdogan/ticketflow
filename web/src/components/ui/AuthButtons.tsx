@@ -121,11 +121,18 @@ export function AuthButtons() {
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-black text-foreground">{displayName}</p>
                                 <p className="truncate text-xs font-semibold text-muted-foreground">{user.email}</p>
+                                {roleLabel !== 'Buyer' && (
+                                    <div className="truncate text-xs font-semibold text-brand-rose">
+                                        {roleLabel}
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        {roleLabel !== 'Buyer' && (
-                            <div className="mt-3 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary">
-                                {roleLabel}
+
+
+                        {user.organizer_approval_status === 'pending' && (
+                            <div className="mt-3 inline-flex rounded-2xl  bg-warning/80 px-3 py-1 text-xs font-black uppercase tracking-wide text-black">
+                                Your account is pending approval. This may limit your access to certain features until approved.
                             </div>
                         )}
                     </div>

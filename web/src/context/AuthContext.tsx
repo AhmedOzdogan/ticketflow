@@ -24,6 +24,8 @@ interface AuthContextType {
 
     isAuthenticated: boolean;
 
+    isPending: boolean;
+
     loginUser: (payload: LoginRequest, rememberMe?: boolean) => Promise<void>;
 
     registerUser: (payload: RegisterRequest, rememberMe?: boolean) => Promise<void>;
@@ -135,6 +137,7 @@ export function AuthProvider({
             refreshToken,
 
             isAuthenticated: !!accessToken,
+            isPending: user?.organizer_approval_status === 'pending',
 
             loginUser,
             registerUser,
