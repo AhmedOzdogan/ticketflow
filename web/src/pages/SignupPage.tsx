@@ -1,9 +1,12 @@
-import { type ChangeEvent, type FormEvent, useState } from 'react';
+import { type FormEvent, useState } from 'react';
 import { FiBriefcase, FiGlobe, FiLock, FiMail, FiPhone, FiUser } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { register } from '../api/authApi';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
+import { AccountSwitch } from '../components/ui/AccountSwitch';
 import { Button } from '../components/ui/Button';
+import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
 
 type AccountType = 'buyer' | 'organizer';
 
@@ -33,30 +36,143 @@ const initialSignupFormData: SignupFormData = {
     acceptedTerms: false,
 };
 
+const baseSignupFields: FormField<SignupFormData>[] = [
+    {
+        name: 'firstName',
+        label: 'First name',
+        type: 'text',
+        placeholder: 'Ahmed',
+        autoComplete: 'given-name',
+        required: true,
+        icon: <FiUser />,
+        containerClassName: 'sm:col-span-1',
+    },
+    {
+        name: 'lastName',
+        label: 'Last name',
+        type: 'text',
+        placeholder: 'Özdoğan',
+        autoComplete: 'family-name',
+        required: true,
+        icon: <FiUser />,
+        containerClassName: 'sm:col-span-1',
+    },
+    {
+        name: 'email',
+        label: 'Email address',
+        type: 'email',
+        placeholder: 'you@example.com',
+        autoComplete: 'email',
+        required: true,
+        icon: <FiMail />,
+        containerClassName: 'sm:col-span-2',
+    },
+    {
+        name: 'phoneNumber',
+        label: 'Phone number',
+        type: 'tel',
+        placeholder: '+49 123 456789',
+        autoComplete: 'tel',
+        required: true,
+        icon: <FiPhone />,
+        containerClassName: 'sm:col-span-2',
+    },
+];
+
+const organizerSignupFields: FormField<SignupFormData>[] = [
+    {
+        name: 'companyName',
+        label: 'Company / organization name',
+        type: 'text',
+        placeholder: 'TicketFlow Events GmbH',
+        autoComplete: 'organization',
+        required: true,
+        icon: <FiBriefcase />,
+        containerClassName: 'sm:col-span-1',
+    },
+    {
+        name: 'website',
+        label: 'Website or social page',
+        type: 'url',
+        placeholder: 'https://example.com',
+        icon: <FiGlobe />,
+        containerClassName: 'sm:col-span-1',
+    },
+    {
+        name: 'organizerDetails',
+        label: 'Organizer details',
+        type: 'textarea',
+        placeholder: 'Tell us what kind of events you organize and why you want to use TicketFlow.',
+        required: true,
+        rows: 4,
+        containerClassName: 'sm:col-span-2',
+    },
+];
+
+const passwordSignupFields: FormField<SignupFormData>[] = [
+    {
+        name: 'password',
+        label: 'Password',
+        type: 'password',
+        placeholder: 'Create password',
+        autoComplete: 'new-password',
+        required: true,
+        icon: <FiLock />,
+        containerClassName: 'sm:col-span-1',
+    },
+    {
+        name: 'confirmPassword',
+        label: 'Confirm password',
+        type: 'password',
+        placeholder: 'Repeat password',
+        autoComplete: 'new-password',
+        required: true,
+        icon: <FiLock />,
+        containerClassName: 'sm:col-span-1',
+    },
+    {
+        name: 'acceptedTerms',
+        label: 'I agree to the User Agreement, Terms of Service, and Privacy Policy.',
+        type: 'checkbox',
+        required: true,
+        containerClassName: 'sm:col-span-2',
+    },
+];
+
 function SignupPage() {
     const navigate = useNavigate();
     const [accountType, setAccountType] = useState<AccountType>('buyer');
     const [formData, setFormData] = useState<SignupFormData>(initialSignupFormData);
 
-    const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = event.target;
-
+    const handleFieldChange = (name: keyof SignupFormData, value: FieldValue) => {
         setFormData((currentFormData) => ({
             ...currentFormData,
             [name]: value,
         }));
     };
 
-    const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const { name, checked } = event.target;
+    const handleSignup = async () => {
+        const response = await register({
+            email: formData.email,
+            password: formData.password,
+            confirm_password: formData.confirmPassword,
+            first_name: formData.firstName,
+            last_name: formData.lastName,
+            phone_number: formData.phoneNumber,
+            role: accountType,
+            company_name: accountType === 'organizer' ? formData.companyName : undefined,
+            website_url: accountType === 'organizer' ? formData.website : undefined,
+            organizer_details: accountType === 'organizer' ? formData.organizerDetails : undefined,
+        });
 
-        setFormData((currentFormData) => ({
-            ...currentFormData,
-            [name]: checked,
-        }));
+        localStorage.setItem('accessToken', response.access);
+        localStorage.setItem('refreshToken', response.refresh);
+        localStorage.setItem('user', JSON.stringify(response.user));
+
+        navigate('/events');
     };
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         if (formData.password !== formData.confirmPassword) {
@@ -64,12 +180,11 @@ function SignupPage() {
             return;
         }
 
-        const signupPayload = {
-            accountType,
-            ...formData,
-        };
-
-        console.log('Signup payload:', signupPayload);
+        try {
+            await handleSignup();
+        } catch (error) {
+            console.error('Signup failed:', error);
+        }
     };
 
     return (
@@ -89,149 +204,24 @@ function SignupPage() {
                             </p>
                         </div>
 
-                        {/* Account type switch */}
-                        <div className="mb-8 grid grid-cols-2 gap-2 rounded-full border border-border bg-background p-1">
-                            <button
-                                type="button"
-                                onClick={() => setAccountType('buyer')}
-                                className={`rounded-full px-4 py-2.5 text-sm font-black transition ${accountType === 'buyer'
-                                        ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-                                        : 'text-muted hover:text-primary'
-                                    }`}
-                            >
-                                Buyer
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setAccountType('organizer')}
-                                className={`rounded-full px-4 py-2.5 text-sm font-black transition ${accountType === 'organizer'
-                                        ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-                                        : 'text-muted hover:text-primary'
-                                    }`}
-                            >
-                                Organizer
-                            </button>
-                        </div>
+                        <AccountSwitch accountType={accountType} setAccountType={setAccountType} />
 
                         <form className="space-y-5" onSubmit={handleSubmit}>
-                            <div className="grid gap-5 sm:grid-cols-2">
-                                <label className="block">
-                                    <span className="text-sm font-bold text-foreground">First name</span>
-                                    <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
-                                        <FiUser className="size-5 text-muted" />
-                                        <input
-                                            name="firstName"
-                                            type="text"
-                                            value={formData.firstName}
-                                            onChange={handleInputChange}
-                                            placeholder="Ahmed"
-                                            autoComplete="given-name"
-                                            required
-                                            className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-                                        />
-                                    </div>
-                                </label>
-
-                                <label className="block">
-                                    <span className="text-sm font-bold text-foreground">Last name</span>
-                                    <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
-                                        <FiUser className="size-5 text-muted" />
-                                        <input
-                                            name="lastName"
-                                            type="text"
-                                            value={formData.lastName}
-                                            onChange={handleInputChange}
-                                            placeholder="Özdoğan"
-                                            autoComplete="family-name"
-                                            required
-                                            className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-                                        />
-                                    </div>
-                                </label>
-                            </div>
-
-                            <label className="block">
-                                <span className="text-sm font-bold text-foreground">Email address</span>
-                                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
-                                    <FiMail className="size-5 text-muted" />
-                                    <input
-                                        name="email"
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        placeholder="you@example.com"
-                                        autoComplete="email"
-                                        required
-                                        className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-                                    />
-                                </div>
-                            </label>
-
-                            <label className="block">
-                                <span className="text-sm font-bold text-foreground">Phone number</span>
-                                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
-                                    <FiPhone className="size-5 text-muted" />
-                                    <input
-                                        name="phoneNumber"
-                                        type="tel"
-                                        value={formData.phoneNumber}
-                                        onChange={handleInputChange}
-                                        placeholder="+49 123 456789"
-                                        autoComplete="tel"
-                                        required
-                                        className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-                                    />
-                                </div>
-                            </label>
+                            <FormFields
+                                fields={baseSignupFields}
+                                values={formData}
+                                onChange={handleFieldChange}
+                                className="grid gap-5 sm:grid-cols-2"
+                            />
 
                             {accountType === 'organizer' && (
                                 <div className="space-y-5 rounded-[1.5rem] border border-secondary/40 bg-secondary/10 p-5">
-                                    <div className="grid gap-5 sm:grid-cols-2">
-                                        <label className="block">
-                                            <span className="text-sm font-bold text-foreground">Company / organization name</span>
-                                            <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
-                                                <FiBriefcase className="size-5 text-muted" />
-                                                <input
-                                                    name="companyName"
-                                                    type="text"
-                                                    value={formData.companyName}
-                                                    onChange={handleInputChange}
-                                                    placeholder="TicketFlow Events GmbH"
-                                                    autoComplete="organization"
-                                                    required={accountType === 'organizer'}
-                                                    className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-                                                />
-                                            </div>
-                                        </label>
-
-                                        <label className="block">
-                                            <span className="text-sm font-bold text-foreground">Website or social page</span>
-                                            <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
-                                                <FiGlobe className="size-5 text-muted" />
-                                                <input
-                                                    name="website"
-                                                    type="url"
-                                                    value={formData.website}
-                                                    onChange={handleInputChange}
-                                                    placeholder="https://example.com"
-                                                    className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-                                                />
-                                            </div>
-                                        </label>
-                                    </div>
-
-                                    <label className="block">
-                                        <span className="text-sm font-bold text-foreground">Organizer details</span>
-                                        <textarea
-                                            name="organizerDetails"
-                                            rows={4}
-                                            value={formData.organizerDetails}
-                                            onChange={handleInputChange}
-                                            placeholder="Tell us what kind of events you organize and why you want to use TicketFlow."
-                                            required={accountType === 'organizer'}
-                                            className="mt-2 w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary"
-                                        />
-                                    </label>
+                                    <FormFields
+                                        fields={organizerSignupFields}
+                                        values={formData}
+                                        onChange={handleFieldChange}
+                                        className="grid gap-5 sm:grid-cols-2"
+                                    />
 
                                     <div className="rounded-2xl border border-primary/30 bg-primary/10 p-4 text-sm leading-6 text-muted">
                                         Organizer accounts are reviewed by admins before approval. After approval, you can create events,
@@ -240,53 +230,12 @@ function SignupPage() {
                                 </div>
                             )}
 
-                            <div className="grid gap-5 sm:grid-cols-2">
-                                <label className="block">
-                                    <span className="text-sm font-bold text-foreground">Password</span>
-                                    <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
-                                        <FiLock className="size-5 text-muted" />
-                                        <input
-                                            name="password"
-                                            type="password"
-                                            value={formData.password}
-                                            onChange={handleInputChange}
-                                            placeholder="Create password"
-                                            autoComplete="new-password"
-                                            required
-                                            className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-                                        />
-                                    </div>
-                                </label>
-
-                                <label className="block">
-                                    <span className="text-sm font-bold text-foreground">Confirm password</span>
-                                    <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
-                                        <FiLock className="size-5 text-muted" />
-                                        <input
-                                            name="confirmPassword"
-                                            type="password"
-                                            value={formData.confirmPassword}
-                                            onChange={handleInputChange}
-                                            placeholder="Repeat password"
-                                            autoComplete="new-password"
-                                            required
-                                            className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-                                        />
-                                    </div>
-                                </label>
-                            </div>
-
-                            <label className="flex items-start gap-3 text-sm font-semibold leading-6 text-muted">
-                                <input
-                                    name="acceptedTerms"
-                                    type="checkbox"
-                                    checked={formData.acceptedTerms}
-                                    onChange={handleCheckboxChange}
-                                    required
-                                    className="mt-1 size-4 accent-primary"
-                                />
-                                <span>I agree to the User Agreement, Terms of Service, and Privacy Policy.</span>
-                            </label>
+                            <FormFields
+                                fields={passwordSignupFields}
+                                values={formData}
+                                onChange={handleFieldChange}
+                                className="grid gap-5 sm:grid-cols-2"
+                            />
 
                             <Button fullWidth size="lg" type="submit">
                                 {accountType === 'buyer' ? 'Create buyer account' : 'Apply as organizer'}
