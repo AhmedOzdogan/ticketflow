@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import logo256 from '/logo_256.png';
-import { Button, ThemeToggle } from '../ui/Button';
+import { ThemeToggle } from '../ui/Button';
 import { AuthButtons } from '../ui/AuthButtons';
 
 const navigationLinks = [
@@ -41,8 +41,8 @@ export function Header() {
                                 type="button"
                                 onClick={() => navigate(link.path)}
                                 className={`rounded-full px-5 py-2 text-sm font-semibold transition-all duration-200 ${isActive
-                                        ? 'bg-primary text-primary-foreground shadow-md'
-                                        : 'text-muted-foreground hover:bg-background hover:text-primary'
+                                    ? 'bg-primary text-primary-foreground shadow-md'
+                                    : 'text-muted-foreground hover:bg-background hover:text-primary'
                                     }`}
                             >
                                 {link.label}
