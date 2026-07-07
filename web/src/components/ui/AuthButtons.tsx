@@ -135,13 +135,18 @@ export function AuthButtons() {
                                 Your account is pending approval. This may limit your access to certain features until approved.
                             </div>
                         )}
+                        {user.organizer_approval_status === 'rejected' && (
+                            <div className="mt-3 inline-flex rounded-2xl  bg-danger px-3 py-1 text-xs font-black uppercase tracking-wide text-black">
+                                Your account has been rejected. Please contact support for further assistance.
+                            </div>
+                        )}
                     </div>
 
 
                     <div className="p-2">
                         <button
                             type="button"
-                            onClick={() => handleNavigate('/profile')}
+                            onClick={() => handleNavigate('/my-profile')}
                             className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-bold text-foreground transition hover:bg-background hover:text-primary"
                         >
                             <FiUser className="size-4" />

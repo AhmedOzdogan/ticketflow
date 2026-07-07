@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import FeaturePreview from './pages/FeaturePreview';
 import NotFoundPage from './pages/404';
+import MyProfile from './pages/MyProfile';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/feature-preview" element={<FeaturePreview />} />
+      <Route path="/my-profile" element={<MyProfile />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
