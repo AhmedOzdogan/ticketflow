@@ -64,7 +64,7 @@ export function Footer() {
                         <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Support</h2>
                         <ul className="mt-4 space-y-3">
                             {supportLinks.map((link) => (
-                                <li key={link.href}>
+                                <li key={`${link.label}-${link.href}`}>
                                     <a href={link.href} className="text-sm text-muted transition hover:text-primary">
                                         {link.label}
                                     </a>
@@ -78,7 +78,7 @@ export function Footer() {
                         <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">Legal</h2>
                         <ul className="mt-4 space-y-3">
                             {legalLinks.map((link) => (
-                                <li key={link.href}>
+                                <li key={`${link.label}-${link.href}`}>
                                     <a href={link.href} className="text-sm text-muted transition hover:text-primary">
                                         {link.label}
                                     </a>
