@@ -11,6 +11,8 @@ export type FormField<TValues extends object = Record<string, FieldValue>> = {
     required?: boolean;
     rows?: number;
     icon?: ReactNode;
+    rightIcon?: ReactNode;
+    onRightIconClick?: () => void;
     helperText?: string;
     containerClassName?: string;
 };
@@ -101,6 +103,16 @@ export function FormFields<TValues extends object>({
                                 disabled={disabled}
                                 className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
                             />
+                            {field.rightIcon && (
+                                <button
+                                    type="button"
+                                    onClick={field.onRightIconClick}
+                                    className="text-muted-foreground transition hover:text-foreground"
+                                    tabIndex={-1}
+                                >
+                                    {field.rightIcon}
+                                </button>
+                            )}
                         </div>
                         {field.helperText && <p className="mt-2 text-xs font-semibold text-muted">{field.helperText}</p>}
                     </label>

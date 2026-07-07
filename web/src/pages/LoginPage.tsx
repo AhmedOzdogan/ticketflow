@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FiLock, FiMail } from 'react-icons/fi';
+import { useState, type SyntheticEvent } from 'react';
+import { FiLock, FiMail, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
@@ -12,40 +12,16 @@ import { toast } from 'sonner';
 type LoginFormData = {
     email: string;
     password: string;
+    showPassword: boolean;
     rememberMe: boolean;
 };
 
 const initialLoginFormData: LoginFormData = {
     email: '',
     password: '',
+    showPassword: false,
     rememberMe: false,
 };
-
-const loginFields: FormField<LoginFormData>[] = [
-    {
-        name: 'email',
-        label: 'Email address',
-        type: 'email',
-        placeholder: 'you@example.com',
-        autoComplete: 'email',
-        required: true,
-        icon: <FiMail />,
-    },
-    {
-        name: 'password',
-        label: 'Password',
-        type: 'password',
-        placeholder: 'Enter your password',
-        autoComplete: 'current-password',
-        required: true,
-        icon: <FiLock />,
-    },
-    {
-        name: 'rememberMe',
-        label: 'Remember me',
-        type: 'checkbox',
-    },
-];
 
 function LoginPage() {
     const navigate = useNavigate();
@@ -54,6 +30,40 @@ function LoginPage() {
     // State for error messages and loading state
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+
+    const loginFields: FormField<LoginFormData>[] = [
+        {
+            name: 'email',
+            label: 'Email address',
+            type: 'email',
+            placeholder: 'you@example.com',
+            autoComplete: 'email',
+            required: true,
+            icon: <FiMail />,
+        },
+        {
+            name: 'password',
+            label: 'Password',
+            type: formData.showPassword ? 'text' : 'password',
+            placeholder: 'Enter your password',
+            autoComplete: 'current-password',
+            required: true,
+            icon: <FiLock />,
+            rightIcon: formData.showPassword ? <FiEyeOff /> : <FiEye />,
+            onRightIconClick: () =>
+                setFormData(prev => ({
+                    ...prev,
+                    showPassword: !prev.showPassword,
+                })),
+            containerClassName: 'sm:col-span-1',
+        },
+        {
+            name: 'rememberMe',
+            label: 'Remember me',
+            type: 'checkbox',
+        },
+    ];
+
 
     const { loginUser } = useAuth();
     const handleFieldChange = (name: keyof LoginFormData, value: FieldValue) => {
@@ -67,14 +77,12 @@ function LoginPage() {
         }));
     };
 
-    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
         e.preventDefault();
         // Reset error message and set loading state
         setErrorMessage(null);
         setLoading(true);
         try {
-
-
             await loginUser(
                 {
                     email: formData.email,

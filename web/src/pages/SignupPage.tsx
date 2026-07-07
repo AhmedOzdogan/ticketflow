@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FiBriefcase, FiGlobe, FiLock, FiMail, FiPhone, FiUser } from 'react-icons/fi';
+import { useState, type SyntheticEvent } from 'react';
+import { FiBriefcase, FiGlobe, FiLock, FiMail, FiPhone, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Footer } from '../components/layout/Footer';
@@ -24,6 +24,8 @@ type SignupFormData = {
     confirmPassword: string;
     acceptedTerms: boolean;
     rememberMe: boolean;
+    showPassword: boolean;
+    showConfirmPassword: boolean;
 };
 
 const initialSignupFormData: SignupFormData = {
@@ -38,6 +40,8 @@ const initialSignupFormData: SignupFormData = {
     confirmPassword: '',
     acceptedTerms: false,
     rememberMe: false,
+    showPassword: false,
+    showConfirmPassword: false,
 };
 
 const baseSignupFields: FormField<SignupFormData>[] = [
@@ -97,8 +101,9 @@ const organizerSignupFields: FormField<SignupFormData>[] = [
     {
         name: 'website',
         label: 'Website or social page',
-        type: 'url',
-        placeholder: 'https://example.com',
+        type: 'text',
+        required: true,
+        placeholder: 'https://example.com or www.example.com',
         icon: <FiGlobe />,
         containerClassName: 'sm:col-span-1',
     },
@@ -113,42 +118,6 @@ const organizerSignupFields: FormField<SignupFormData>[] = [
     },
 ];
 
-const passwordSignupFields: FormField<SignupFormData>[] = [
-    {
-        name: 'password',
-        label: 'Password',
-        type: 'password',
-        placeholder: 'Create password',
-        autoComplete: 'new-password',
-        required: true,
-        icon: <FiLock />,
-        containerClassName: 'sm:col-span-1',
-    },
-    {
-        name: 'confirmPassword',
-        label: 'Confirm password',
-        type: 'password',
-        placeholder: 'Repeat password',
-        autoComplete: 'new-password',
-        required: true,
-        icon: <FiLock />,
-        containerClassName: 'sm:col-span-1',
-    },
-    {
-        name: 'acceptedTerms',
-        label: 'I agree to the User Agreement, Terms of Service, and Privacy Policy.',
-        type: 'checkbox',
-        required: true,
-        containerClassName: 'sm:col-span-2',
-    },
-    {
-        name: 'rememberMe',
-        label: 'Remember me',
-        type: 'checkbox',
-    },
-
-];
-
 function SignupPage() {
     const navigate = useNavigate();
     const [accountType, setAccountType] = useState<AccountType>('buyer');
@@ -158,6 +127,52 @@ function SignupPage() {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
 
+    const passwordSignupFields: FormField<SignupFormData>[] = [
+        {
+            name: 'password',
+            label: 'Password',
+            type: formData.showPassword ? 'text' : 'password',
+            placeholder: 'Create password',
+            autoComplete: 'new-password',
+            required: true,
+            icon: <FiLock />,
+            rightIcon: formData.showPassword ? <FiEyeOff /> : <FiEye />,
+            onRightIconClick: () =>
+                setFormData(prev => ({
+                    ...prev,
+                    showPassword: !prev.showPassword,
+                })),
+            containerClassName: 'sm:col-span-1',
+        },
+        {
+            name: 'confirmPassword',
+            label: 'Confirm password',
+            type: formData.showConfirmPassword ? 'text' : 'password',
+            placeholder: 'Repeat password',
+            autoComplete: 'new-password',
+            required: true,
+            icon: <FiLock />,
+            rightIcon: formData.showConfirmPassword ? <FiEyeOff /> : <FiEye />,
+            onRightIconClick: () =>
+                setFormData(prev => ({
+                    ...prev,
+                    showConfirmPassword: !prev.showConfirmPassword,
+                })),
+            containerClassName: 'sm:col-span-1',
+        },
+        {
+            name: 'acceptedTerms',
+            label: 'I agree to the User Agreement, Terms of Service, and Privacy Policy.',
+            type: 'checkbox',
+            required: true,
+            containerClassName: 'sm:col-span-2',
+        },
+        {
+            name: 'rememberMe',
+            label: 'Remember me',
+            type: 'checkbox',
+        },
+    ];
 
     const handleFieldChange = (name: keyof SignupFormData, value: FieldValue) => {
         if (errorMessage) {
@@ -170,7 +185,7 @@ function SignupPage() {
     };
 
 
-    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
         e.preventDefault();
         setLoading(true);
         setErrorMessage(null);
@@ -188,11 +203,8 @@ function SignupPage() {
             return;
         }
 
-        if (accountType === 'organizer' && (!formData.companyName || !formData.organizerDetails)) {
-            toast.warning('Please fill in all required fields for organizer account');
-            setErrorMessage('Please fill in all required fields for organizer account');
-            setLoading(false);
-            return;
+        if (accountType === 'organizer' && formData.website && !/^https?:\/\//i.test(formData.website)) {
+            formData.website = 'http://' + formData.website;
         }
 
         try {
