@@ -164,7 +164,7 @@ export function AuthButtons() {
                     <div className="border-t border-border p-2">
                         <button
                             type="button"
-                            onClick={() => handleNavigate('/settings')}
+                            onClick={() => handleNavigate('/feature-preview')}
                             className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-bold text-foreground transition hover:bg-background hover:text-primary"
                         >
                             <FiSettings className="size-4" />
@@ -173,7 +173,7 @@ export function AuthButtons() {
 
                         <button
                             type="button"
-                            onClick={() => handleNavigate('/support')}
+                            onClick={() => handleNavigate('/feature-preview')}
                             className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-bold text-foreground transition hover:bg-background hover:text-primary"
                         >
                             <FiHelpCircle className="size-4" />

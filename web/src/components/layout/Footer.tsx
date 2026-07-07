@@ -7,17 +7,17 @@ const productLinks = [
 ];
 
 const supportLinks = [
-    { label: 'Help center', href: '/help' },
-    { label: 'Contact', href: '/contact' },
-    { label: 'Status', href: '/status' },
-    { label: 'Security', href: '/security' },
+    { label: 'Help center', href: '/feature-preview' },
+    { label: 'Contact', href: '/feature-preview' },
+    { label: 'Status', href: '/feature-preview' },
+    { label: 'Security', href: '/feature-preview' },
 ];
 
 const legalLinks = [
-    { label: 'User Agreement', href: '/user-agreement' },
-    { label: 'Privacy Policy', href: '/privacy' },
-    { label: 'Cookie Policy', href: '/cookies' },
-    { label: 'Terms of Service', href: '/terms' },
+    { label: 'User Agreement', href: '/feature-preview' },
+    { label: 'Privacy Policy', href: '/feature-preview' },
+    { label: 'Cookie Policy', href: '/feature-preview' },
+    { label: 'Terms of Service', href: '/feature-preview' },
 ];
 
 export function Footer() {
