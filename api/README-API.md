@@ -232,16 +232,16 @@ Base path:
 
 | Method | Endpoint | Description | Auth Required |
 |---|---|---|---|
-| POST | `/api/users/register/` | Register a new buyer or organizer and return JWT tokens | No |
-| POST | `/api/users/login/` | Login with email and password and return JWT tokens | No |
-| POST | `/api/users/logout/` | Logout by blacklisting the refresh token | Yes |
-| POST | `/api/users/token/refresh/` | Generate a new access token from a refresh token | No |
-| GET | `/api/users/me/` | Get the current logged-in user profile | Yes |
-| PATCH | `/api/users/me/` | Update the current logged-in user profile | Yes |
-| PUT | `/api/users/me/` | Replace the current logged-in user profile | Yes |
-| POST | `/api/users/change-password/` | Change the current logged-in user's password | Yes |
-| PATCH | `/api/users/organizers/<uuid:pk>/approve/` | Approve or reject an organizer account | Admin only |
-| PUT | `/api/users/organizers/<uuid:pk>/approve/` | Replace organizer approval status | Admin only |
+| POST | `/api/v1/users/register/` | Register a new buyer or organizer and return JWT tokens | No |
+| POST | `/api/v1/users/login/` | Login with email and password and return JWT tokens | No |
+| POST | `/api//v1/users/logout/` | Logout by blacklisting the refresh token | Yes |
+| POST | `/api//v1/users/token/refresh/` | Generate a new access token from a refresh token | No |
+| GET | `/api/v1/users/me/` | Get the current logged-in user profile | Yes |
+| PATCH | `/api/v1/users/me/` | Update the current logged-in user profile | Yes |
+| PUT | `/api/v1/users/me/` | Replace the current logged-in user profile | Yes |
+| POST | `/api//v1/users/change-password/` | Change the current logged-in user's password | Yes |
+| PATCH | `/api/v1/users/organizers/<uuid:pk>/approve/` | Approve or reject an organizer account | Admin only |
+| PUT | `/api/v1/users/organizers/<uuid:pk>/approve/` | Replace organizer approval status | Admin only |
 ```
 
 #### Authentication Request Examples
