@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 
 from .models import OrganizerApprovalStatus, OrganizerProfile, User, UserRole
 
@@ -156,9 +157,14 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
-        user = authenticate(email=attrs["email"], password=attrs["password"])
+        user = authenticate(
+            email=attrs["email"],
+            password=attrs["password"],
+        )
+
         if not user:
-            raise serializers.ValidationError("Invalid email or password.")
+            raise AuthenticationFailed("Invalid email or password.")
+
         attrs["user"] = user
         return attrs
 
