@@ -118,6 +118,14 @@ const organizerSignupFields: FormField<SignupFormData>[] = [
     },
 ];
 
+// Commonly used weak passwords that should be avoided
+// Backend already checks for weak passwords, but we can provide immediate feedback on the frontend as well
+const commonPasswordList = ['password', '12345678', 'qwerty', 'abc123',
+    'letmein', '111111', '123123', 'admin', 'welcome', 'monkey', 'login', 'princess',
+    'solo', 'starwars', 'dragon', 'football', 'baseball', 'superman', 'iloveyou', 'master',
+    'hello', 'freedom', 'whatever', 'qazwsx', 'trustno1', '654321', 'jordan', 'harley', 'password1',
+    '1234', '12345',];
+
 function SignupPage() {
     const navigate = useNavigate();
     const [accountType, setAccountType] = useState<AccountType>('buyer');
@@ -207,6 +215,14 @@ function SignupPage() {
             formData.website = 'http://' + formData.website;
         }
 
+        // if password is less than 8 characters, too common or entirely numeric, show error
+        if (formData.password.length < 8 || /^\d+$/.test(formData.password) || commonPasswordList.includes(formData.password.toLowerCase())) {
+            toast.warning('Password must be at least 8 characters long and not entirely numeric');
+            setErrorMessage('Password must be at least 8 characters long and not entirely numeric');
+            setLoading(false);
+            return;
+        }
+
         try {
             await registerUser({
                 email: formData.email,
@@ -252,7 +268,7 @@ function SignupPage() {
 
                         <AccountSwitch accountType={accountType} setAccountType={setAccountType} />
 
-                        <form className="space-y-5" onSubmit={handleSubmit}>
+                        <form className="space-y-5" onSubmit={handleSubmit} method="POST">
                             <FormFields
                                 fields={baseSignupFields}
                                 values={formData}

@@ -130,7 +130,7 @@ function LoginPage() {
                         </div>
 
 
-                        <form className="space-y-5" onSubmit={handleSubmit}>
+                        <form className="space-y-5" onSubmit={handleSubmit} method="POST">
                             <FormFields fields={loginFields} values={formData} onChange={handleFieldChange} />
 
 
