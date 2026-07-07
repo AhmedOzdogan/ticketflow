@@ -1,71 +1,37 @@
-import { apiRequest } from './client';
+import axios from 'axios';
 
-export type UserRole = 'buyer' | 'organizer' | 'admin';
+import type {
+    AuthResponse,
+    LoginRequest,
+    RefreshTokenResponse,
+    RegisterRequest,
+} from '../types/auth';
 
-export type AuthUser = {
-    id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    phone_number: string;
-    role: UserRole;
-    is_email_verified: boolean;
-    organizer_approval_status: string;
-    profile_image_url: string;
-    organizer_profile: unknown | null;
-};
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api';
 
-export type AuthResponse = {
-    access: string;
-    refresh: string;
-    user: AuthUser;
-};
-
-export type LoginRequest = {
-    email: string;
-    password: string;
-};
-
-export type RegisterRequest = {
-    email: string;
-    password: string;
-    confirm_password: string;
-    first_name: string;
-    last_name: string;
-    phone_number?: string;
-    role: 'buyer' | 'organizer';
-    company_name?: string;
-    website_url?: string;
-    organizer_details?: string;
-};
-
-export function login(payload: LoginRequest) {
-    return apiRequest<AuthResponse>('/v1/users/login/', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-    });
+export async function login(payload: LoginRequest): Promise<AuthResponse> {
+    const response = await axios.post<AuthResponse>(`${API_BASE_URL}/v1/users/login/`, payload);
+    return response.data;
 }
 
-export function register(payload: RegisterRequest) {
-    return apiRequest<AuthResponse>('/v1/users/register/', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-    });
+export async function register(payload: RegisterRequest): Promise<AuthResponse> {
+    const response = await axios.post<AuthResponse>(`${API_BASE_URL}/v1/users/register/`, payload);
+    return response.data;
 }
 
-export function refreshToken(refresh: string) {
-    return apiRequest<{ access: string }>('/users/token/refresh/', {
-        method: 'POST',
-        body: JSON.stringify({ refresh }),
-    });
+export async function refreshToken(refresh: string): Promise<RefreshTokenResponse> {
+    const response = await axios.post<RefreshTokenResponse>(`${API_BASE_URL}/v1/users/token/refresh/`, { refresh });
+    return response.data;
 }
 
-export function logout(refresh: string, access: string) {
-    return apiRequest<void>('/users/logout/', {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${access}`,
+export async function logout(refresh: string, access: string): Promise<void> {
+    await axios.post(
+        `${API_BASE_URL}/v1/users/logout/`,
+        { refresh },
+        {
+            headers: {
+                Authorization: `Bearer ${access}`,
+            },
         },
-        body: JSON.stringify({ refresh }),
-    });
+    );
 }

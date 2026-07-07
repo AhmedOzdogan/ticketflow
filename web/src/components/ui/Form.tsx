@@ -20,12 +20,14 @@ type FormFieldsProps<TValues extends object> = {
     values: TValues;
     onChange: (name: Extract<keyof TValues, string>, value: FieldValue) => void;
     className?: string;
+    disabled?: boolean;
 };
 
 export function FormFields<TValues extends object>({
     fields,
     values,
     onChange,
+    disabled = false,
     className = 'space-y-5',
 }: FormFieldsProps<TValues>) {
     const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -56,6 +58,7 @@ export function FormFields<TValues extends object>({
                                 checked={Boolean(fieldValue)}
                                 onChange={handleCheckboxChange}
                                 required={field.required}
+                                disabled={disabled}
                                 className="mt-1 size-4 accent-primary"
                             />
                             <span>{field.label}</span>
@@ -74,6 +77,7 @@ export function FormFields<TValues extends object>({
                                 onChange={handleInputChange}
                                 placeholder={field.placeholder}
                                 required={field.required}
+                                disabled={disabled}
                                 className="mt-2 w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary"
                             />
                             {field.helperText && <p className="mt-2 text-xs font-semibold text-muted">{field.helperText}</p>}
@@ -94,6 +98,7 @@ export function FormFields<TValues extends object>({
                                 placeholder={field.placeholder}
                                 autoComplete={field.autoComplete}
                                 required={field.required}
+                                disabled={disabled}
                                 className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
                             />
                         </div>

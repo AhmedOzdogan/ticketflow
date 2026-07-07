@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { FiBriefcase, FiGlobe, FiLock, FiMail, FiPhone, FiUser } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -7,6 +7,8 @@ import { Header } from '../components/layout/Header';
 import { AccountSwitch } from '../components/ui/AccountSwitch';
 import { Button } from '../components/ui/Button';
 import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
+import { toast } from 'sonner';
+import { getApiErrorMessage } from '../utils/getApiErrorMessages';
 
 type AccountType = 'buyer' | 'organizer';
 
@@ -109,11 +111,6 @@ const organizerSignupFields: FormField<SignupFormData>[] = [
         rows: 4,
         containerClassName: 'sm:col-span-2',
     },
-    {
-        name: 'rememberMe',
-        label: 'Remember me',
-        type: 'checkbox',
-    },
 ];
 
 const passwordSignupFields: FormField<SignupFormData>[] = [
@@ -144,6 +141,11 @@ const passwordSignupFields: FormField<SignupFormData>[] = [
         required: true,
         containerClassName: 'sm:col-span-2',
     },
+    {
+        name: 'rememberMe',
+        label: 'Remember me',
+        type: 'checkbox',
+    },
 
 ];
 
@@ -153,8 +155,14 @@ function SignupPage() {
     const [formData, setFormData] = useState<SignupFormData>(initialSignupFormData);
     const { registerUser } = useAuth();
 
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+
 
     const handleFieldChange = (name: keyof SignupFormData, value: FieldValue) => {
+        if (errorMessage) {
+            setErrorMessage(null);
+        }
         setFormData((currentFormData) => ({
             ...currentFormData,
             [name]: value,
@@ -162,11 +170,28 @@ function SignupPage() {
     };
 
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
+    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setLoading(true);
+        setErrorMessage(null);
         if (formData.password !== formData.confirmPassword) {
-            console.log('Passwords do not match');
+            toast.warning('Passwords do not match');
+            setErrorMessage('Passwords do not match');
+            setLoading(false);
+            return;
+        }
+
+        if (!formData.acceptedTerms) {
+            toast.warning('You must accept the terms and conditions');
+            setErrorMessage('You must accept the terms and conditions');
+            setLoading(false);
+            return;
+        }
+
+        if (accountType === 'organizer' && (!formData.companyName || !formData.organizerDetails)) {
+            toast.warning('Please fill in all required fields for organizer account');
+            setErrorMessage('Please fill in all required fields for organizer account');
+            setLoading(false);
             return;
         }
 
@@ -184,9 +209,15 @@ function SignupPage() {
                 organizer_details: accountType === 'organizer' ? formData.organizerDetails : undefined,
             }, formData.rememberMe);
 
+            toast.success('Signup successful! Please check your email to verify your account.');
             navigate('/');
         } catch (error) {
+            const apiMessage = getApiErrorMessage(error);
+            setErrorMessage(apiMessage);
+            toast.error(apiMessage);
             console.error('Signup failed:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -214,6 +245,7 @@ function SignupPage() {
                                 fields={baseSignupFields}
                                 values={formData}
                                 onChange={handleFieldChange}
+                                disabled={loading}
                                 className="grid gap-5 sm:grid-cols-2"
                             />
 
@@ -240,8 +272,8 @@ function SignupPage() {
                                 className="grid gap-5 sm:grid-cols-2"
                             />
 
-                            <Button fullWidth size="lg" type="submit">
-                                {accountType === 'buyer' ? 'Create buyer account' : 'Apply as organizer'}
+                            <Button fullWidth size="lg" type="submit" disabled={loading}>
+                                {loading ? 'Creating account...' : accountType === 'buyer' ? 'Create buyer account' : 'Apply as organizer'}
                             </Button>
                         </form>
 

@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
 import { FiLock, FiMail } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { Footer } from '../components/layout/Footer';
@@ -6,6 +6,8 @@ import { Header } from '../components/layout/Header';
 import { Button } from '../components/ui/Button';
 import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
 import { useAuth } from '../context/AuthContext';
+import { getApiErrorMessage } from '../utils/getApiErrorMessages';
+import { toast } from 'sonner';
 
 type LoginFormData = {
     email: string;
@@ -48,26 +50,47 @@ const loginFields: FormField<LoginFormData>[] = [
 function LoginPage() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState<LoginFormData>(initialLoginFormData);
+
+    // State for error messages and loading state
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+
     const { loginUser } = useAuth();
     const handleFieldChange = (name: keyof LoginFormData, value: FieldValue) => {
+        if (errorMessage) {
+            setErrorMessage(null);
+        }
+
         setFormData((currentFormData) => ({
             ...currentFormData,
             [name]: value,
         }));
     };
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
+    const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        // Reset error message and set loading state
+        setErrorMessage(null);
+        setLoading(true);
         try {
-            await loginUser({
-                email: formData.email,
-                password: formData.password,
-            }, formData.rememberMe);
 
+
+            await loginUser(
+                {
+                    email: formData.email,
+                    password: formData.password,
+                },
+                formData.rememberMe
+            );
+            toast.success('Logged in successfully!');
             navigate('/');
         } catch (error) {
+            const apiMessage = getApiErrorMessage(error);
+            setErrorMessage(apiMessage);
+            toast.error(apiMessage);
             console.error('Login failed:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -109,8 +132,8 @@ function LoginPage() {
                                 </button>
                             </div>
 
-                            <Button fullWidth size="lg" type="submit">
-                                Log in
+                            <Button fullWidth size="lg" type="submit" disabled={loading}>
+                                {loading ? 'Logging in...' : 'Log in'}
                             </Button>
                         </form>
 
