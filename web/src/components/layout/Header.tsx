@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import logo256 from '/logo_256.png';
 import { Button, ThemeToggle } from '../ui/Button';
+import { AuthButtons } from '../ui/AuthButtons';
 
 const navigationLinks = [
     { label: 'Home', path: '/' },
@@ -47,18 +48,7 @@ export function Header() {
                 <div className="flex items-center gap-3">
                     <ThemeToggle />
 
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="hidden sm:inline-flex"
-                        onClick={() => navigate('/login')}
-                    >
-                        Login
-                    </Button>
-
-                    <Button variant="primary" size="sm" onClick={() => navigate('/signup')}>
-                        Sign up
-                    </Button>
+                    <AuthButtons />
                 </div>
             </div>
         </header>

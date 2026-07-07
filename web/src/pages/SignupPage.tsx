@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { FiBriefcase, FiGlobe, FiLock, FiMail, FiPhone, FiUser } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
-import { register } from '../api/authApi';
+import { useAuth } from '../context/AuthContext';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
 import { AccountSwitch } from '../components/ui/AccountSwitch';
@@ -21,6 +21,7 @@ type SignupFormData = {
     password: string;
     confirmPassword: string;
     acceptedTerms: boolean;
+    rememberMe: boolean;
 };
 
 const initialSignupFormData: SignupFormData = {
@@ -34,6 +35,7 @@ const initialSignupFormData: SignupFormData = {
     password: '',
     confirmPassword: '',
     acceptedTerms: false,
+    rememberMe: false,
 };
 
 const baseSignupFields: FormField<SignupFormData>[] = [
@@ -107,6 +109,11 @@ const organizerSignupFields: FormField<SignupFormData>[] = [
         rows: 4,
         containerClassName: 'sm:col-span-2',
     },
+    {
+        name: 'rememberMe',
+        label: 'Remember me',
+        type: 'checkbox',
+    },
 ];
 
 const passwordSignupFields: FormField<SignupFormData>[] = [
@@ -137,12 +144,15 @@ const passwordSignupFields: FormField<SignupFormData>[] = [
         required: true,
         containerClassName: 'sm:col-span-2',
     },
+
 ];
 
 function SignupPage() {
     const navigate = useNavigate();
     const [accountType, setAccountType] = useState<AccountType>('buyer');
     const [formData, setFormData] = useState<SignupFormData>(initialSignupFormData);
+    const { registerUser } = useAuth();
+
 
     const handleFieldChange = (name: keyof SignupFormData, value: FieldValue) => {
         setFormData((currentFormData) => ({
@@ -151,26 +161,6 @@ function SignupPage() {
         }));
     };
 
-    const handleSignup = async () => {
-        const response = await register({
-            email: formData.email,
-            password: formData.password,
-            confirm_password: formData.confirmPassword,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone_number: formData.phoneNumber,
-            role: accountType,
-            company_name: accountType === 'organizer' ? formData.companyName : undefined,
-            website_url: accountType === 'organizer' ? formData.website : undefined,
-            organizer_details: accountType === 'organizer' ? formData.organizerDetails : undefined,
-        });
-
-        localStorage.setItem('accessToken', response.access);
-        localStorage.setItem('refreshToken', response.refresh);
-        localStorage.setItem('user', JSON.stringify(response.user));
-
-        navigate('/events');
-    };
 
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -181,7 +171,20 @@ function SignupPage() {
         }
 
         try {
-            await handleSignup();
+            await registerUser({
+                email: formData.email,
+                password: formData.password,
+                confirm_password: formData.confirmPassword,
+                first_name: formData.firstName,
+                last_name: formData.lastName,
+                phone_number: formData.phoneNumber,
+                role: accountType === 'buyer' ? 'buyer' : 'organizer',
+                company_name: accountType === 'organizer' ? formData.companyName : undefined,
+                website_url: accountType === 'organizer' ? formData.website : undefined,
+                organizer_details: accountType === 'organizer' ? formData.organizerDetails : undefined,
+            }, formData.rememberMe);
+
+            navigate('/');
         } catch (error) {
             console.error('Signup failed:', error);
         }

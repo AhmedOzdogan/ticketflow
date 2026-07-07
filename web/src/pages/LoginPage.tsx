@@ -1,14 +1,11 @@
 import { type FormEvent, useState } from 'react';
 import { FiLock, FiMail } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../api/authApi';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
-import { AccountSwitch } from '../components/ui/AccountSwitch';
 import { Button } from '../components/ui/Button';
 import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
-
-type AccountType = 'buyer' | 'organizer';
+import { useAuth } from '../context/AuthContext';
 
 type LoginFormData = {
     email: string;
@@ -50,9 +47,8 @@ const loginFields: FormField<LoginFormData>[] = [
 
 function LoginPage() {
     const navigate = useNavigate();
-    const [accountType, setAccountType] = useState<AccountType>('buyer');
     const [formData, setFormData] = useState<LoginFormData>(initialLoginFormData);
-
+    const { loginUser } = useAuth();
     const handleFieldChange = (name: keyof LoginFormData, value: FieldValue) => {
         setFormData((currentFormData) => ({
             ...currentFormData,
@@ -60,24 +56,16 @@ function LoginPage() {
         }));
     };
 
-    const handleLogin = async () => {
-        const response = await login({
-            email: formData.email,
-            password: formData.password,
-        });
-
-        localStorage.setItem('accessToken', response.access);
-        localStorage.setItem('refreshToken', response.refresh);
-        localStorage.setItem('user', JSON.stringify(response.user));
-
-        navigate('/events');
-    };
-
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         try {
-            await handleLogin();
+            await loginUser({
+                email: formData.email,
+                password: formData.password,
+            }, formData.rememberMe);
+
+            navigate('/');
         } catch (error) {
             console.error('Login failed:', error);
         }
@@ -110,16 +98,10 @@ function LoginPage() {
                             </p>
                         </div>
 
-                        <AccountSwitch accountType={accountType} setAccountType={setAccountType} />
 
                         <form className="space-y-5" onSubmit={handleSubmit}>
                             <FormFields fields={loginFields} values={formData} onChange={handleFieldChange} />
 
-                            {accountType === 'organizer' && (
-                                <div className="rounded-2xl border border-secondary/40 bg-secondary/15 p-4 text-sm leading-6 text-muted">
-                                    Organizer accounts can access event creation, ticket sales, attendee lists, and check-in tools after approval.
-                                </div>
-                            )}
 
                             <div className="flex justify-end text-sm">
                                 <button type="button" className="font-bold text-primary transition hover:text-accent">
@@ -128,7 +110,7 @@ function LoginPage() {
                             </div>
 
                             <Button fullWidth size="lg" type="submit">
-                                Log in as {accountType === 'buyer' ? 'buyer' : 'organizer'}
+                                Log in
                             </Button>
                         </form>
 
