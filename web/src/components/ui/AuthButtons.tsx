@@ -123,10 +123,13 @@ export function AuthButtons() {
                                 <p className="truncate text-xs font-semibold text-muted-foreground">{user.email}</p>
                             </div>
                         </div>
-                        <div className="mt-3 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary">
-                            {roleLabel}
-                        </div>
+                        {roleLabel !== 'Buyer' && (
+                            <div className="mt-3 inline-flex rounded-full bg-primary/10 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary">
+                                {roleLabel}
+                            </div>
+                        )}
                     </div>
+
 
                     <div className="p-2">
                         <button
