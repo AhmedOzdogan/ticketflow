@@ -31,17 +31,24 @@ export function Header() {
                 </button>
 
                 {/* Main navigation */}
-                <nav className="hidden items-center gap-8 text-sm font-semibold text-muted md:flex">
-                    {navigationLinks.map((link) => (
-                        <button
-                            key={link.path}
-                            type="button"
-                            onClick={() => navigate(link.path)}
-                            className="transition hover:text-primary"
-                        >
-                            {link.label}
-                        </button>
-                    ))}
+                <nav className="hidden rounded-full border border-border bg-surface/80 p-1 shadow-sm backdrop-blur md:flex">
+                    {navigationLinks.map((link) => {
+                        const isActive = window.location.pathname === link.path;
+
+                        return (
+                            <button
+                                key={link.path}
+                                type="button"
+                                onClick={() => navigate(link.path)}
+                                className={`rounded-full px-5 py-2 text-sm font-semibold transition-all duration-200 ${isActive
+                                        ? 'bg-primary text-primary-foreground shadow-md'
+                                        : 'text-muted-foreground hover:bg-background hover:text-primary'
+                                    }`}
+                            >
+                                {link.label}
+                            </button>
+                        );
+                    })}
                 </nav>
 
                 {/* Auth actions and theme toggle */}
