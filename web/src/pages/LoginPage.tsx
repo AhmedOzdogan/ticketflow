@@ -1,9 +1,12 @@
-import { type ChangeEvent, type FormEvent, useState } from 'react';
+import { type FormEvent, useState } from 'react';
 import { FiLock, FiMail } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { login } from '../api/authApi';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
+import { AccountSwitch } from '../components/ui/AccountSwitch';
 import { Button } from '../components/ui/Button';
+import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
 
 type AccountType = 'buyer' | 'organizer';
 
@@ -19,29 +22,65 @@ const initialLoginFormData: LoginFormData = {
     rememberMe: false,
 };
 
+const loginFields: FormField<LoginFormData>[] = [
+    {
+        name: 'email',
+        label: 'Email address',
+        type: 'email',
+        placeholder: 'you@example.com',
+        autoComplete: 'email',
+        required: true,
+        icon: <FiMail />,
+    },
+    {
+        name: 'password',
+        label: 'Password',
+        type: 'password',
+        placeholder: 'Enter your password',
+        autoComplete: 'current-password',
+        required: true,
+        icon: <FiLock />,
+    },
+    {
+        name: 'rememberMe',
+        label: 'Remember me',
+        type: 'checkbox',
+    },
+];
+
 function LoginPage() {
     const navigate = useNavigate();
     const [accountType, setAccountType] = useState<AccountType>('buyer');
     const [formData, setFormData] = useState<LoginFormData>(initialLoginFormData);
 
-    const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const { name, value, type, checked } = event.target;
-
+    const handleFieldChange = (name: keyof LoginFormData, value: FieldValue) => {
         setFormData((currentFormData) => ({
             ...currentFormData,
-            [name]: type === 'checkbox' ? checked : value,
+            [name]: value,
         }));
     };
 
-    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    const handleLogin = async () => {
+        const response = await login({
+            email: formData.email,
+            password: formData.password,
+        });
+
+        localStorage.setItem('accessToken', response.access);
+        localStorage.setItem('refreshToken', response.refresh);
+        localStorage.setItem('user', JSON.stringify(response.user));
+
+        navigate('/events');
+    };
+
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        const loginPayload = {
-            accountType,
-            ...formData,
-        };
-
-        console.log('Login payload:', loginPayload);
+        try {
+            await handleLogin();
+        } catch (error) {
+            console.error('Login failed:', error);
+        }
     };
 
     return (
@@ -51,14 +90,16 @@ function LoginPage() {
             <main className="relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8">
                 <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,var(--brand-yellow),transparent_30%),radial-gradient(circle_at_top_right,var(--brand-rose),transparent_28%)] opacity-20" />
 
-                <section className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
-                    <div className="hidden overflow-hidden rounded-[2rem] border border-border bg-surface p-3 shadow-2xl shadow-brand-black/10 lg:block">
-                        <img
-                            src="/images/theater.webp"
-                            alt="Event venue with audience seats"
-                            className="h-[620px] w-full rounded-[1.5rem] object-cover"
-                        />
-                    </div>
+                <section className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+                    <aside className="hidden lg:block">
+                        <div className="sticky top-28 overflow-hidden rounded-[2rem] border border-border bg-surface p-3 shadow-2xl shadow-brand-black/10">
+                            <img
+                                src="/images/theater.webp"
+                                alt="Event venue with audience seats"
+                                className="h-[620px] w-full rounded-[1.5rem] object-cover"
+                            />
+                        </div>
+                    </aside>
 
                     <div className="mx-auto w-full max-w-xl rounded-[2rem] border border-border bg-surface p-6 shadow-2xl shadow-brand-black/10 sm:p-8">
                         <div className="mb-8">
@@ -69,64 +110,10 @@ function LoginPage() {
                             </p>
                         </div>
 
-                        {/* Account type switch */}
-                        <div className="mb-8 grid grid-cols-2 gap-2 rounded-full border border-border bg-background p-1">
-                            <button
-                                type="button"
-                                onClick={() => setAccountType('buyer')}
-                                className={`rounded-full px-4 py-2.5 text-sm font-black transition ${accountType === 'buyer'
-                                        ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-                                        : 'text-muted hover:text-primary'
-                                    }`}
-                            >
-                                Buyer
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setAccountType('organizer')}
-                                className={`rounded-full px-4 py-2.5 text-sm font-black transition ${accountType === 'organizer'
-                                        ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-                                        : 'text-muted hover:text-primary'
-                                    }`}
-                            >
-                                Organizer
-                            </button>
-                        </div>
+                        <AccountSwitch accountType={accountType} setAccountType={setAccountType} />
 
                         <form className="space-y-5" onSubmit={handleSubmit}>
-                            <label className="block">
-                                <span className="text-sm font-bold text-foreground">Email address</span>
-                                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
-                                    <FiMail className="size-5 text-muted" />
-                                    <input
-                                        name="email"
-                                        type="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        placeholder="you@example.com"
-                                        autoComplete="email"
-                                        required
-                                        className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-                                    />
-                                </div>
-                            </label>
-
-                            <label className="block">
-                                <span className="text-sm font-bold text-foreground">Password</span>
-                                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
-                                    <FiLock className="size-5 text-muted" />
-                                    <input
-                                        name="password"
-                                        type="password"
-                                        value={formData.password}
-                                        onChange={handleInputChange}
-                                        placeholder="Enter your password"
-                                        autoComplete="current-password"
-                                        required
-                                        className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
-                                    />
-                                </div>
-                            </label>
+                            <FormFields fields={loginFields} values={formData} onChange={handleFieldChange} />
 
                             {accountType === 'organizer' && (
                                 <div className="rounded-2xl border border-secondary/40 bg-secondary/15 p-4 text-sm leading-6 text-muted">
@@ -134,17 +121,7 @@ function LoginPage() {
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-between gap-4 text-sm">
-                                <label className="flex items-center gap-2 font-semibold text-muted">
-                                    <input
-                                        name="rememberMe"
-                                        type="checkbox"
-                                        checked={formData.rememberMe}
-                                        onChange={handleInputChange}
-                                        className="size-4 accent-primary"
-                                    />
-                                    Remember me
-                                </label>
+                            <div className="flex justify-end text-sm">
                                 <button type="button" className="font-bold text-primary transition hover:text-accent">
                                     Forgot password?
                                 </button>
