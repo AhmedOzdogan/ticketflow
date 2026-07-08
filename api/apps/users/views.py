@@ -10,6 +10,7 @@ from .permissions import IsAdmin
 from .serializers import (
     ChangePasswordSerializer,
     LoginSerializer,
+    OrganizerListSerializer,
     OrganizerApprovalSerializer,
     RegisterSerializer,
     UserMeSerializer,
@@ -96,6 +97,15 @@ class ChangePasswordView(APIView):
         request.user.save(update_fields=["password", "updated_at"])
 
         return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
+
+
+class OrganizerListView(generics.ListAPIView):
+    serializer_class = OrganizerListSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def get_queryset(self):
+        return User.objects.filter(role="organizer").select_related("organizer_profile").order_by("-created_at")
+
 
 class OrganizerApprovalView(generics.UpdateAPIView):
     queryset = User.objects.filter(role="organizer")

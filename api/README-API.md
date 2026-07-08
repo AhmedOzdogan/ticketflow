@@ -239,7 +239,7 @@ Base path:
 | GET | `/api/v1/users/me/` | Get the current logged-in user profile | Yes |
 | PATCH | `/api/v1/users/me/` | Update the current logged-in user profile | Yes |
 | PUT | `/api/v1/users/me/` | Replace the current logged-in user profile | Yes |
-| POST | `/api//v1/users/change-password/` | Change the current logged-in user's password | Yes |
+| GET | `/api/v1/users/organizers/` | Get the list of organizers that is approved rejeccted or waiting | Admin only |
 | PATCH | `/api/v1/users/organizers/<uuid:pk>/approve/` | Approve or reject an organizer account | Admin only |
 | PUT | `/api/v1/users/organizers/<uuid:pk>/approve/` | Replace organizer approval status | Admin only |
 ```

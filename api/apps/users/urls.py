@@ -6,6 +6,7 @@ from .views import (
     LogoutView,
     MeView,
     OrganizerApprovalView,
+    OrganizerListView,
     RegisterView,
     TokenRefresh,
 )
@@ -19,5 +20,6 @@ urlpatterns = [
     path("token/refresh/", TokenRefresh.as_view(), name="token-refresh"),
     path("me/", MeView.as_view(), name="me"),
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
+    path("organizers/", OrganizerListView.as_view(), name="organizer-list"),
     path("organizers/<uuid:pk>/approve/", OrganizerApprovalView.as_view(), name="approve-organizer"),
 ]
