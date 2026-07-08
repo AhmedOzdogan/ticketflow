@@ -124,3 +124,23 @@ button {
   background: var(--brand-yellow);
   color: var(--brand-black);
 }
+
+@media (max-width: 767px) {
+  html,
+  body {
+    width: 100%;
+    overflow-x: clip;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  #root {
+    min-height: 100vh;
+    overflow-x: clip;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+  }
+}
