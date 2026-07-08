@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import logo256 from '/logo_256.png';
 import { ThemeToggle } from '../ui/Button';
 import { AuthButtons } from '../ui/AuthButtons';
+import { MobileNavigation } from '../ui/MobileNavigation';
 
 const navigationLinks = [
     { label: 'Home', path: '/' },
@@ -12,52 +13,55 @@ export function Header() {
     const navigate = useNavigate();
 
     return (
-        <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
-            <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-                {/* Brand logo and name */}
-                <button
-                    type="button"
-                    onClick={() => navigate('/')}
-                    className="flex items-center gap-3 text-left"
-                    aria-label="TicketFlow home"
-                >
-                    <img src={logo256} alt="TicketFlow logo" className="size-10 rounded-xl object-contain" />
-                    <div className="leading-tight">
-                        <p className="text-lg font-bold tracking-tight text-foreground">TicketFlow</p>
-                        <p className="hidden text-xs font-medium text-muted-foreground sm:block">
-                            Events. Tickets. Check-ins.
-                        </p>
+        <>
+            <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-xl">
+                <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+                    {/* Brand logo and name */}
+                    <button
+                        type="button"
+                        onClick={() => navigate('/')}
+                        className="flex items-center gap-3 text-left"
+                        aria-label="TicketFlow home"
+                    >
+                        <img src={logo256} alt="TicketFlow logo" className="size-10 rounded-xl object-contain" />
+                        <div className="leading-tight">
+                            <p className="text-lg font-bold tracking-tight text-foreground">TicketFlow</p>
+                            <p className="hidden text-xs font-medium text-muted-foreground sm:block">
+                                Events. Tickets. Check-ins.
+                            </p>
+                        </div>
+                    </button>
+
+                    {/* Main navigation */}
+                    <nav className="hidden rounded-full border border-border bg-surface/80 p-1 shadow-sm backdrop-blur md:flex">
+                        {navigationLinks.map((link) => {
+                            const isActive = window.location.pathname === link.path;
+
+                            return (
+                                <button
+                                    key={link.path}
+                                    type="button"
+                                    onClick={() => navigate(link.path)}
+                                    className={`rounded-full px-5 py-2 text-sm font-semibold transition-all duration-200 ${isActive
+                                        ? 'bg-primary text-primary-foreground shadow-md'
+                                        : 'text-muted-foreground hover:bg-background hover:text-primary'
+                                        }`}
+                                >
+                                    {link.label}
+                                </button>
+                            );
+                        })}
+                    </nav>
+
+                    {/* Auth actions and theme toggle */}
+                    <div className="flex items-center gap-3">
+                        <ThemeToggle />
+
+                        <AuthButtons />
                     </div>
-                </button>
-
-                {/* Main navigation */}
-                <nav className="hidden rounded-full border border-border bg-surface/80 p-1 shadow-sm backdrop-blur md:flex">
-                    {navigationLinks.map((link) => {
-                        const isActive = window.location.pathname === link.path;
-
-                        return (
-                            <button
-                                key={link.path}
-                                type="button"
-                                onClick={() => navigate(link.path)}
-                                className={`rounded-full px-5 py-2 text-sm font-semibold transition-all duration-200 ${isActive
-                                    ? 'bg-primary text-primary-foreground shadow-md'
-                                    : 'text-muted-foreground hover:bg-background hover:text-primary'
-                                    }`}
-                            >
-                                {link.label}
-                            </button>
-                        );
-                    })}
-                </nav>
-
-                {/* Auth actions and theme toggle */}
-                <div className="flex items-center gap-3">
-                    <ThemeToggle />
-
-                    <AuthButtons />
                 </div>
-            </div>
-        </header>
+            </header>
+            <MobileNavigation />
+        </>
     );
 }

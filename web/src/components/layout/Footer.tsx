@@ -1,4 +1,3 @@
-
 const productLinks = [
     { label: 'Events', href: '/events' },
     { label: 'Create event', href: '/create-event' },
@@ -24,7 +23,7 @@ export function Footer() {
     const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="border-t border-border bg-surface text-foreground">
+        <footer className="border-t border-border bg-surface pb-12 text-foreground sm:pb-4">
             <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
                 <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
                     {/* Brand summary */}
