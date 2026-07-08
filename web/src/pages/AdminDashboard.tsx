@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getCurrentOrganizers, updateOrganizerStatus } from "../api/authApi";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
+import Authgate from "../pages/AuthGate";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui/Button";
 
@@ -113,6 +114,18 @@ const AdminDashboard: React.FC = () => {
     const filteredOrganizers = organizers.filter((org) =>
         filter === "all" ? true : org.organizer_approval_status === filter,
     );
+
+    if (!user) {
+        return (
+            <Authgate />
+        );
+    }
+
+    if (user.role !== "admin") {
+        return (
+            <Authgate variant="unauthorized" />
+        );
+    }
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">

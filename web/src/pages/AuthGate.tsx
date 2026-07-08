@@ -37,9 +37,6 @@ export default function AuthGate({
                 <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,var(--brand-yellow),transparent_30%),radial-gradient(circle_at_top_right,var(--brand-rose),transparent_28%)] opacity-20" />
 
                 <section className="mx-auto flex max-w-5xl flex-col items-center text-center">
-                    <div className="mb-8 inline-flex rounded-full border border-border bg-surface px-4 py-2 text-sm font-black uppercase tracking-widest text-primary shadow-sm">
-                        {isLoginGate ? 'Authentication required' : 'Unauthorized access'}
-                    </div>
 
                     <div className="relative mb-8 flex h-36 w-36 items-center justify-center rounded-[2rem] border border-border bg-surface shadow-2xl shadow-brand-black/10">
                         <div className="absolute -right-4 -top-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">

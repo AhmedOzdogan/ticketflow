@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
+import AuthGate from '../pages/AuthGate';
 import { Button } from '../components/ui/Button';
 import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
 import { useAuth } from '../context/AuthContext';
@@ -332,16 +333,7 @@ function MyProfile() {
 
     if (!user) {
         return (
-            <div className="flex min-h-screen flex-col bg-background text-foreground">
-                <Header />
-                <main className="flex flex-1 items-center justify-center px-4 py-20">
-                    <div className="max-w-xl rounded-3xl border border-border bg-surface p-8 text-center shadow-2xl shadow-brand-black/10">
-                        <h1 className="text-3xl font-black text-foreground">You are not signed in</h1>
-                        <p className="mt-3 text-sm leading-6 text-muted">Please log in to view your profile information.</p>
-                    </div>
-                </main>
-                <Footer />
-            </div>
+            <AuthGate />
         );
     }
 
