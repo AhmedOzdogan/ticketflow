@@ -18,6 +18,12 @@ from .serializers import (
     UserListSerializer,
 )
 
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+from .filters import UserFilter
+from .paginations import DefaultPagination
+from rest_framework.filters import OrderingFilter
+
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -104,6 +110,29 @@ class UserListView(generics.ListAPIView):
     queryset = User.objects.select_related("organizer_profile").order_by("-created_at")
     serializer_class = UserListSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    pagination_class = DefaultPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = UserFilter
+    search_fields = [
+        "email",
+        "first_name",
+        "last_name",
+        "phone_number",
+        "organizer_profile__company_name",
+
+    ]
+
+    ordering_fields = [
+    "created_at",
+    "updated_at",
+    "email",
+    "first_name",
+    "last_name",
+    "role",
+
+]
+
+ordering = ["-created_at"]
 
 class OrganizerListView(generics.ListAPIView):
     serializer_class = OrganizerListSerializer
