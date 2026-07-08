@@ -7,7 +7,7 @@ import {
     type ReactNode,
 } from 'react';
 
-import { login, register } from '../api/authApi';
+import { getCurrentUser, login, register } from '../api/authApi';
 
 import type {
     LoginRequest,
@@ -38,9 +38,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_STORAGE_KEY = 'ticketflow-auth-storage';
-const ACCESS_TOKEN_KEY = 'accessToken';
-const REFRESH_TOKEN_KEY = 'refreshToken';
-const USER_KEY = 'user';
+const ACCESS_TOKEN_KEY = 'access';
+const REFRESH_TOKEN_KEY = 'refresh';
 
 type AuthStorageType = 'local' | 'session';
 
@@ -52,11 +51,9 @@ const clearAuthStorage = () => {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
 
     sessionStorage.removeItem(ACCESS_TOKEN_KEY);
     sessionStorage.removeItem(REFRESH_TOKEN_KEY);
-    sessionStorage.removeItem(USER_KEY);
 };
 
 export function AuthProvider({
@@ -76,21 +73,20 @@ export function AuthProvider({
 
         const storedAccess = storage.getItem(ACCESS_TOKEN_KEY);
         const storedRefresh = storage.getItem(REFRESH_TOKEN_KEY);
-        const storedUser = storage.getItem(USER_KEY);
 
         if (storedAccess) setAccessToken(storedAccess);
         if (storedRefresh) setRefreshToken(storedRefresh);
 
-        if (storedUser) {
-            try {
-                setUser(JSON.parse(storedUser) as User);
-            } catch {
-                clearAuthStorage();
-            }
+        if (storedAccess) {
+            getCurrentUser()
+                .then((currentUser) => setUser(currentUser))
+                .catch(() => {
+                    logoutUser();
+                });
         }
     }, []);
 
-    const saveAuth = (access: string, refresh: string, user: User, rememberMe = false) => {
+    const saveAuth = async (access: string, refresh: string, rememberMe = false) => {
         const storageType: AuthStorageType = rememberMe ? 'local' : 'session';
         const storage = getAuthStorage(storageType);
 
@@ -98,7 +94,6 @@ export function AuthProvider({
 
         setAccessToken(access);
         setRefreshToken(refresh);
-        setUser(user);
 
         if (rememberMe) {
             localStorage.setItem(AUTH_STORAGE_KEY, storageType);
@@ -106,19 +101,21 @@ export function AuthProvider({
 
         storage.setItem(ACCESS_TOKEN_KEY, access);
         storage.setItem(REFRESH_TOKEN_KEY, refresh);
-        storage.setItem(USER_KEY, JSON.stringify(user));
+
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
     };
 
     const loginUser = async (payload: LoginRequest, rememberMe = false) => {
         const response = await login(payload);
 
-        saveAuth(response.access, response.refresh, response.user as User, rememberMe);
+        await saveAuth(response.access, response.refresh, rememberMe);
     };
 
     const registerUser = async (payload: RegisterRequest, rememberMe = false) => {
         const response = await register(payload);
 
-        saveAuth(response.access, response.refresh, response.user as User, rememberMe);
+        await saveAuth(response.access, response.refresh, rememberMe);
     };
 
     const logoutUser = () => {

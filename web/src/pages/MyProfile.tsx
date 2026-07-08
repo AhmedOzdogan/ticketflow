@@ -9,7 +9,7 @@ import { Button } from '../components/ui/Button';
 import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
 import { useAuth } from '../context/AuthContext';
 import type { OrganizerApprovalStatus, UserRole } from '../types/user';
-import { changePassword, editProfile } from '../api/authApi';
+import { changePassword, editProfile, getCurrentUser } from '../api/authApi';
 import { getApiErrorMessage } from '../utils/getApiErrorMessages';
 
 type ProfileFormData = {
@@ -102,7 +102,7 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
 }
 
 function MyProfile() {
-    const { user, accessToken } = useAuth();
+    const { user, setUser } = useAuth();
     const [profileFormData, setProfileFormData] = useState<ProfileFormData>(initialProfileFormData);
     const [organizerFormData, setOrganizerFormData] = useState<OrganizerFormData>(initialOrganizerFormData);
     const [passwordFormData, setPasswordFormData] = useState<PasswordFormData>(initialPasswordFormData);
@@ -256,12 +256,6 @@ function MyProfile() {
     const handleSaveProfile = async () => {
         setProfileLoading(true);
 
-        if (!accessToken) {
-            toast.error('Access token is missing. Please log in again.');
-            setProfileLoading(false);
-            return;
-        }
-
         if (profileFormData.firstName.trim() === '' || profileFormData.lastName.trim() === '' || profileFormData.phoneNumber.trim() === '') {
             toast.error('First name, last name, and phone number cannot be empty.');
             setProfileLoading(false);
@@ -275,8 +269,11 @@ function MyProfile() {
                     last_name: profileFormData.lastName,
                     phone_number: profileFormData.phoneNumber,
                 },
-                accessToken!,
             )
+
+            const currentUser = await getCurrentUser();
+
+            setUser(currentUser);
 
             toast.success('Profile information updated successfully.');
         } catch (error) {
@@ -312,7 +309,6 @@ function MyProfile() {
                     confirm_password:
                         passwordFormData.confirmPassword,
                 },
-                accessToken!,
             );
 
             toast.success(

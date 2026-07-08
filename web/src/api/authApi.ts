@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { api } from './client';
 
 import type {
     AuthResponse,
@@ -8,73 +8,61 @@ import type {
     RegisterRequest,
 } from '../types/auth';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api';
-
 export async function login(payload: LoginRequest): Promise<AuthResponse> {
-    const response = await axios.post<AuthResponse>(`${API_BASE_URL}/v1/users/login/`, payload);
+    const response = await api.post<AuthResponse>('/v1/users/login/', payload);
     return response.data;
 }
 
 export async function register(payload: RegisterRequest): Promise<AuthResponse> {
-    const response = await axios.post<AuthResponse>(`${API_BASE_URL}/v1/users/register/`, payload);
+    const response = await api.post<AuthResponse>('/v1/users/register/', payload);
     return response.data;
 }
 
 export async function changePassword(
     payload: ChangePasswordRequest,
-    accessToken: string,
 ) {
-    const response = await axios.post(
-        `${API_BASE_URL}/v1/users/change-password/`,
+    const response = await api.post(
+        '/v1/users/change-password/',
         payload,
-        {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        },
     );
 
     return response.data;
 }
 
-export async function editProfile(payload: Partial<RegisterRequest>, accessToken: string) {
-    const response = await axios.patch(
-        `${API_BASE_URL}/v1/users/me/`,
+export async function getCurrentUser() {
+    const response = await api.get('/v1/users/me/');
+
+    return response.data;
+}
+export async function refreshTokenRequest(refresh: string): Promise<RefreshTokenResponse> {
+    const response = await api.post<RefreshTokenResponse>('/v1/users/token/refresh/', { refresh });
+    return response.data;
+}
+
+export async function editProfile(payload: Partial<RegisterRequest>) {
+    const response = await api.patch(
+        '/v1/users/me/',
         payload,
-        {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        },
     );
 
     return response.data;
 }
 
 export async function refreshToken(refresh: string): Promise<RefreshTokenResponse> {
-    const response = await axios.post<RefreshTokenResponse>(`${API_BASE_URL}/v1/users/token/refresh/`, { refresh });
+    const response = await api.post<RefreshTokenResponse>('/v1/users/token/refresh/', { refresh });
     return response.data;
 }
 
-export async function logout(refresh: string, access: string): Promise<void> {
-    await axios.post(
-        `${API_BASE_URL}/v1/users/logout/`,
+export async function logout(refresh: string): Promise<void> {
+    console.log("refresh token is", refresh)
+    await api.post(
+        '/v1/users/logout/',
         { refresh },
-        {
-            headers: {
-                Authorization: `Bearer ${access}`,
-            },
-        },
     );
 }
 
-export async function getCurrentOrganizers(accessToken: string) {
-    console.log('Fetching current organizers with access token:', accessToken);
-    const response = await axios.get(`${API_BASE_URL}/v1/users/organizers/`, {
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-    });
+export async function getCurrentOrganizers() {
+    const response = await api.get('/v1/users/organizers/');
 
     return response.data;
 }
@@ -83,7 +71,6 @@ export async function updateOrganizerStatus(
     organizerId: string,
     organizer_approval_status: 'approved' | 'rejected',
     rejectionReason: string | null,
-    accessToken: string,
 ) {
     if (
         organizer_approval_status === 'rejected' &&
@@ -103,14 +90,9 @@ export async function updateOrganizerStatus(
         payload.rejection_reason = rejectionReason!;
     }
 
-    const response = await axios.patch(
-        `${API_BASE_URL}/v1/users/organizers/${organizerId}/approve/`,
+    const response = await api.patch(
+        `/v1/users/organizers/${organizerId}/approve/`,
         payload,
-        {
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-            },
-        },
     );
 
     return response.data;

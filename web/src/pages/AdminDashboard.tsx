@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { getCurrentOrganizers, updateOrganizerStatus } from "../api/authApi";
-import { Header } from "../components/layout/Header";
-import { Footer } from "../components/layout/Footer";
-import Authgate from "../pages/AuthGate";
-import { useAuth } from "../context/AuthContext";
-import { Button } from "../components/ui/Button";
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-// OrganizerProfile type
+import { getCurrentOrganizers, updateOrganizerStatus } from '../api/authApi';
+import { Footer } from '../components/layout/Footer';
+import { Header } from '../components/layout/Header';
+import { Button } from '../components/ui/Button';
+import { useAuth } from '../context/AuthContext';
+import AuthGate from './AuthGate';
+
+type ApprovalStatus = 'approved' | 'pending' | 'rejected';
+type FilterStatus = 'all' | ApprovalStatus;
+
 interface OrganizerProfile {
     company_name: string;
     website_url: string;
@@ -14,67 +17,100 @@ interface OrganizerProfile {
     rejection_reason: string | null;
 }
 
-// Organizer type
 interface Organizer {
     id: string;
     email: string;
     first_name: string;
     last_name: string;
     phone_number: string;
-    organizer_approval_status: "approved" | "pending" | "rejected";
+    organizer_approval_status: ApprovalStatus;
     organizer_profile: OrganizerProfile | null;
 }
 
 interface OrganizerStatusState {
-    status: "approved" | "rejected" | "pending";
+    status: ApprovalStatus;
     rejectionReason: string;
 }
 
+function getStatusBadgeClasses(status: ApprovalStatus) {
+    if (status === 'approved') {
+        return 'bg-success/15 text-success border border-success/30';
+    }
+
+    if (status === 'rejected') {
+        return 'bg-danger/15 text-danger border border-danger/30';
+    }
+
+    return 'bg-secondary/25 text-foreground border border-secondary';
+}
+
+function formatStatus(status: ApprovalStatus) {
+    return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
 const AdminDashboard: React.FC = () => {
-    const { user, accessToken } = useAuth();
+    const { user } = useAuth();
     const [organizers, setOrganizers] = useState<Organizer[]>([]);
     const [loading, setLoading] = useState(true);
-    // To track status and rejection reason for each organizer
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [statusState, setStatusState] = useState<Record<string, OrganizerStatusState>>({});
-    const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+    const [filter, setFilter] = useState<FilterStatus>('all');
 
+    const fetchOrganizers = useCallback(async () => {
+        setLoading(true);
+        setErrorMessage(null);
 
-    useEffect(() => {
-        const fetchOrganizers = async () => {
-            setLoading(true);
-            try {
-                const data = await getCurrentOrganizers(accessToken!);
-                console.log("Fetched organizers:", data);
-                setOrganizers(data);
-                // Initialize status state for each organizer
-                const initialStatus: Record<string, OrganizerStatusState> = {};
-                data.forEach((org: Organizer) => {
-                    initialStatus[org.id] = {
-                        status: org.organizer_approval_status,
-                        rejectionReason: org.organizer_profile?.rejection_reason || "", // Initialize with existing rejection reason or empty string
-                    };
-                });
-                setStatusState(initialStatus);
-                console.log("Fetched organizers:", data);
-            } catch (e) {
-                // Handle error as needed
-            }
+        try {
+            const data = await getCurrentOrganizers();
+            setOrganizers(data);
+
+            const initialStatus: Record<string, OrganizerStatusState> = {};
+
+            data.forEach((org: Organizer) => {
+                initialStatus[org.id] = {
+                    status: org.organizer_approval_status,
+                    rejectionReason: org.organizer_profile?.rejection_reason ?? '',
+                };
+            });
+
+            setStatusState(initialStatus);
+        } catch (error) {
+            console.error(error);
+            setErrorMessage('Could not load organizer applications. Please try again.');
+        } finally {
             setLoading(false);
-        };
-        fetchOrganizers();
-        // eslint-disable-next-line
+        }
     }, []);
 
-    const handleStatusChange = (
-        id: string,
-        value: "approved" | "pending" | "rejected",
-    ) => {
+    useEffect(() => {
+        if (user?.role === 'admin') {
+            void fetchOrganizers();
+        }
+    }, [fetchOrganizers, user?.role]);
+
+    const counts = useMemo(
+        () => ({
+            all: organizers.length,
+            pending: organizers.filter((org) => org.organizer_approval_status === 'pending').length,
+            approved: organizers.filter((org) => org.organizer_approval_status === 'approved').length,
+            rejected: organizers.filter((org) => org.organizer_approval_status === 'rejected').length,
+        }),
+        [organizers],
+    );
+
+    const filteredOrganizers = useMemo(
+        () => organizers.filter((org) => (filter === 'all' ? true : org.organizer_approval_status === filter)),
+        [filter, organizers],
+    );
+
+    const handleStatusChange = (id: string, value: ApprovalStatus) => {
         setStatusState((prev) => ({
             ...prev,
             [id]: {
                 ...prev[id],
                 status: value,
-                rejectionReason: value !== "rejected" ? "" : prev[id]?.rejectionReason || "",
+                rejectionReason: value === 'rejected' ? prev[id]?.rejectionReason ?? '' : '',
             },
         }));
     };
@@ -89,207 +125,222 @@ const AdminDashboard: React.FC = () => {
         }));
     };
 
-    const handleUpdateStatus = (
+    const handleUpdateStatus = async (
         id: string,
-        status: "approved" | "pending" | "rejected",
+        status: ApprovalStatus,
         rejectionReason: string,
     ) => {
-        if (status === "pending") {
+        if (status === 'pending') {
+            setErrorMessage('Please choose Approve organizer or Reject organizer before updating.');
             return;
         }
-        updateOrganizerStatus(id, status, rejectionReason, accessToken!)
-            .then(() => {
-                // Update the local state to reflect the change
-                setOrganizers((prev) =>
-                    prev.map((org) =>
-                        org.id === id ? { ...org, organizer_approval_status: status } : org
-                    )
-                );
-            })
-            .catch((error) => {
-                console.log("Error updating status:", error);
-            });
+
+        if (status === 'rejected' && !rejectionReason.trim()) {
+            setErrorMessage('Please enter a rejection reason before rejecting this organizer.');
+            return;
+        }
+
+        setUpdatingId(id);
+        setErrorMessage(null);
+
+        try {
+            await updateOrganizerStatus(id, status, rejectionReason);
+            await fetchOrganizers();
+        } catch (error) {
+            console.error(error);
+            setErrorMessage('Could not update organizer status. Please try again.');
+        } finally {
+            setUpdatingId(null);
+        }
     };
 
-    const filteredOrganizers = organizers.filter((org) =>
-        filter === "all" ? true : org.organizer_approval_status === filter,
-    );
-
     if (!user) {
-        return (
-            <Authgate />
-        );
+        return <AuthGate />;
     }
 
-    if (user.role !== "admin") {
-        return (
-            <Authgate variant="unauthorized" />
-        );
+    if (user.role !== 'admin') {
+        return <AuthGate variant="unauthorized" />;
     }
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
             <Header />
+
             <main className="relative flex-1 overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-7xl space-y-12">
+                <div className="mx-auto max-w-7xl space-y-8">
                     <section className="flex flex-col gap-6 rounded-[2rem] border border-border bg-surface p-6 shadow-xl shadow-brand-black/5 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">Admin Dashboard</p>
                             <h1 className="mt-2 text-3xl font-black tracking-tight">Organizer Management</h1>
                             <p className="mt-2 text-sm text-muted">Review, approve and reject organizer applications.</p>
                         </div>
-                        <div className="flex gap-3 flex-wrap">
-                            <Button variant={filter === "all" ? "primary" : "outline"} onClick={() => setFilter("all")}>All ({organizers.length})</Button>
-                            <Button variant={filter === "pending" ? "primary" : "outline"} onClick={() => setFilter("pending")}>Pending ({organizers.filter(o => o.organizer_approval_status === "pending").length})</Button>
-                            <Button variant={filter === "approved" ? "primary" : "outline"} onClick={() => setFilter("approved")}>Approved ({organizers.filter(o => o.organizer_approval_status === "approved").length})</Button>
-                            <Button variant={filter === "rejected" ? "primary" : "outline"} onClick={() => setFilter("rejected")}>Rejected ({organizers.filter(o => o.organizer_approval_status === "rejected").length})</Button>
+
+                        <div className="flex flex-wrap gap-3">
+                            <Button variant={filter === 'all' ? 'primary' : 'outline'} onClick={() => setFilter('all')}>
+                                All ({counts.all})
+                            </Button>
+                            <Button variant={filter === 'pending' ? 'primary' : 'outline'} onClick={() => setFilter('pending')}>
+                                Pending ({counts.pending})
+                            </Button>
+                            <Button variant={filter === 'approved' ? 'primary' : 'outline'} onClick={() => setFilter('approved')}>
+                                Approved ({counts.approved})
+                            </Button>
+                            <Button variant={filter === 'rejected' ? 'primary' : 'outline'} onClick={() => setFilter('rejected')}>
+                                Rejected ({counts.rejected})
+                            </Button>
                         </div>
                     </section>
+
+                    {errorMessage && (
+                        <div className="rounded-2xl border border-danger/20 bg-danger/5 px-5 py-4 text-sm font-bold text-danger">
+                            {errorMessage}
+                        </div>
+                    )}
+
                     {loading ? (
-                        <div className="flex justify-center items-center h-40">
-                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+                        <div className="flex h-40 items-center justify-center">
+                            <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-t-2 border-primary" />
                         </div>
                     ) : (
-                        <div className="space-y-10">
+                        <div className="space-y-8">
                             {filteredOrganizers.length === 0 && (
                                 <div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center">
                                     <h3 className="text-xl font-bold">No organizers found</h3>
                                     <p className="mt-2 text-muted">There are no organizers matching the selected filter.</p>
                                 </div>
                             )}
-                            {filteredOrganizers.map((org) => (
-                                <div
-                                    key={org.id}
-                                    className="rounded-[2rem] bg-surface p-8 shadow-xl shadow-brand-black/5"
-                                >
-                                    <header className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-3">
-                                        <div>
-                                            <h2 className="text-2xl font-black tracking-tight">{org.first_name} {org.last_name}</h2>
-                                            <p className="text-sm uppercase tracking-widest text-muted mt-1">{org.organizer_profile?.company_name || "N/A"}</p>
-                                        </div>
-                                        <div>
-                                            {org.organizer_approval_status === "approved" && (
-                                                <span className="inline-block rounded-full bg-success/15 text-success border border-success/30 px-4 py-1 text-sm font-semibold">
-                                                    Approved
-                                                </span>
-                                            )}
-                                            {org.organizer_approval_status === "pending" && (
-                                                <span className="inline-block rounded-full bg-secondary/25 text-foreground border border-secondary px-4 py-1 text-sm font-semibold">
-                                                    Pending
-                                                </span>
-                                            )}
-                                            {org.organizer_approval_status === "rejected" && (
-                                                <span className="inline-block rounded-full bg-danger/15 text-danger border border-danger/30 px-4 py-1 text-sm font-semibold">
-                                                    Rejected
-                                                </span>
-                                            )}
-                                        </div>
-                                    </header>
-                                    <div className="grid gap-6 lg:grid-cols-3">
-                                        <div className="rounded-xl bg-surface-muted border border-border p-4 flex flex-col">
-                                            <span className="text-xs uppercase tracking-widest text-muted mb-1">Email</span>
-                                            <span className="font-semibold text-foreground break-all">{org.email}</span>
-                                        </div>
-                                        <div className="rounded-xl bg-surface-muted border border-border p-4 flex flex-col">
-                                            <span className="text-xs uppercase tracking-widest text-muted mb-1">Phone</span>
-                                            <span className="font-semibold text-foreground">{org.phone_number}</span>
-                                        </div>
-                                        <div className="rounded-xl bg-surface-muted border border-border p-4 flex flex-col">
-                                            <span className="text-xs uppercase tracking-widest text-muted mb-1">Website</span>
-                                            {org.organizer_profile?.website_url ? (
-                                                <a
-                                                    href={org.organizer_profile.website_url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="font-semibold text-foreground hover:underline break-all"
-                                                >
-                                                    {org.organizer_profile.website_url}
-                                                </a>
-                                            ) : (
-                                                <span className="font-semibold text-muted">N/A</span>
-                                            )}
-                                        </div>
-                                        <div className="rounded-xl bg-surface-muted border border-border p-4 flex flex-col lg:col-span-3">
-                                            <span className="text-xs uppercase tracking-widest text-muted mb-1">Description</span>
-                                            <span className="font-semibold text-foreground">{org.organizer_profile?.organizer_details || "N/A"}</span>
-                                        </div>
-                                    </div>
-                                    <div className="mt-8 border-t border-border pt-8">
-                                        {statusState[org.id]?.status === "rejected" && (
-                                            <div className="mb-6 rounded-[1.5rem] border border-danger/20 bg-danger/5 p-5">
-                                                <label className="mb-3 block text-sm font-black text-danger">
-                                                    Rejection reason
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Explain why this organizer was rejected..."
-                                                    className="w-full rounded-2xl border border-border bg-background px-5 py-4 text-base font-medium text-foreground focus:border-primary focus:outline-none"
-                                                    value={statusState[org.id]?.rejectionReason || ""}
-                                                    onChange={(e) => handleRejectionReasonChange(org.id, e.target.value)}
-                                                />
+
+                            {filteredOrganizers.map((org) => {
+                                const selectedStatus = statusState[org.id]?.status ?? org.organizer_approval_status;
+                                const rejectionReason = statusState[org.id]?.rejectionReason ?? '';
+                                const isUpdating = updatingId === org.id;
+
+                                return (
+                                    <article
+                                        key={org.id}
+                                        className="rounded-[2rem] border border-border bg-surface p-6 shadow-xl shadow-brand-black/5 sm:p-8"
+                                    >
+                                        <header className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                            <div>
+                                                <h2 className="text-2xl font-black tracking-tight">
+                                                    {org.first_name} {org.last_name}
+                                                </h2>
+                                                <p className="mt-1 text-sm uppercase tracking-widest text-muted">
+                                                    {org.organizer_profile?.company_name || 'N/A'}
+                                                </p>
                                             </div>
-                                        )}
 
-                                        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                                            <div className="min-w-[280px]">
-                                                <label
-                                                    htmlFor={`status-select-${org.id}`}
-                                                    className="mb-3 block text-sm font-black text-foreground"
-                                                >
-                                                    Approval decision
-                                                </label>
+                                            <span className={`inline-flex w-fit rounded-full px-4 py-1 text-sm font-semibold ${getStatusBadgeClasses(org.organizer_approval_status)}`}>
+                                                {formatStatus(org.organizer_approval_status)}
+                                            </span>
+                                        </header>
 
-                                                <div className="relative group">
-                                                    <select
-                                                        id={`status-select-${org.id}`}
-                                                        className="h-14 w-full appearance-none rounded-2xl border-2 border-border bg-surface px-5 pr-14 text-base font-semibold text-foreground shadow-sm transition-all duration-200 hover:border-primary/40 focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none"
-                                                        value={statusState[org.id]?.status || org.organizer_approval_status}
-                                                        onChange={(e) =>
-                                                            handleStatusChange(
-                                                                org.id,
-                                                                e.target.value as "approved" | "pending" | "rejected",
-                                                            )
-                                                        }
+                                        <div className="grid gap-6 lg:grid-cols-3">
+                                            <div className="flex flex-col rounded-xl border border-border bg-surface-muted p-4">
+                                                <span className="mb-1 text-xs uppercase tracking-widest text-muted">Email</span>
+                                                <span className="break-all font-semibold text-foreground">{org.email}</span>
+                                            </div>
+
+                                            <div className="flex flex-col rounded-xl border border-border bg-surface-muted p-4">
+                                                <span className="mb-1 text-xs uppercase tracking-widest text-muted">Phone</span>
+                                                <span className="font-semibold text-foreground">{org.phone_number || 'N/A'}</span>
+                                            </div>
+
+                                            <div className="flex flex-col rounded-xl border border-border bg-surface-muted p-4">
+                                                <span className="mb-1 text-xs uppercase tracking-widest text-muted">Website</span>
+                                                {org.organizer_profile?.website_url ? (
+                                                    <a
+                                                        href={org.organizer_profile.website_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="break-all font-semibold text-foreground hover:underline"
                                                     >
-                                                        <option value="pending">Select a decision</option>
-                                                        <option value="approved">Approve organizer</option>
-                                                        <option value="rejected">Reject organizer</option>
-                                                    </select>
-                                                    <div className="pointer-events-none absolute inset-y-0 right-5 flex items-center text-muted transition-colors group-hover:text-primary">
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            className="h-5 w-5"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                            strokeWidth={2.5}
+                                                        {org.organizer_profile.website_url}
+                                                    </a>
+                                                ) : (
+                                                    <span className="font-semibold text-muted">N/A</span>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-col rounded-xl border border-border bg-surface-muted p-4 lg:col-span-3">
+                                                <span className="mb-1 text-xs uppercase tracking-widest text-muted">Description</span>
+                                                <span className="font-semibold text-foreground">
+                                                    {org.organizer_profile?.organizer_details || 'N/A'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-8 border-t border-border pt-8">
+                                            {selectedStatus === 'rejected' && (
+                                                <div className="mb-6 rounded-[1.5rem] border border-danger/20 bg-danger/5 p-5">
+                                                    <label className="mb-3 block text-sm font-black text-danger">
+                                                        Rejection reason
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Explain why this organizer was rejected..."
+                                                        className="w-full rounded-2xl border border-border bg-background px-5 py-4 text-base font-medium text-foreground focus:border-primary focus:outline-none"
+                                                        value={rejectionReason}
+                                                        onChange={(event) => handleRejectionReasonChange(org.id, event.target.value)}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                                                <div className="min-w-[280px]">
+                                                    <label
+                                                        htmlFor={`status-select-${org.id}`}
+                                                        className="mb-3 block text-sm font-black text-foreground"
+                                                    >
+                                                        Approval decision
+                                                    </label>
+
+                                                    <div className="group relative">
+                                                        <select
+                                                            id={`status-select-${org.id}`}
+                                                            className="h-14 w-full appearance-none rounded-2xl border-2 border-border bg-surface px-5 pr-14 text-base font-semibold text-foreground shadow-sm transition-all duration-200 hover:border-primary/40 focus:border-primary focus:outline-none focus:ring-4 focus:ring-primary/10"
+                                                            value={selectedStatus}
+                                                            onChange={(event) => handleStatusChange(org.id, event.target.value as ApprovalStatus)}
                                                         >
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
-                                                        </svg>
+                                                            <option value="pending" disabled>
+                                                                Select a decision
+                                                            </option>
+                                                            <option value="approved">Approve organizer</option>
+                                                            <option value="rejected">Reject organizer</option>
+                                                        </select>
+
+                                                        <div className="pointer-events-none absolute inset-y-0 right-5 flex items-center text-muted transition-colors group-hover:text-primary">
+                                                            <svg
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                className="h-5 w-5"
+                                                                fill="none"
+                                                                viewBox="0 0 24 24"
+                                                                stroke="currentColor"
+                                                                strokeWidth={2.5}
+                                                            >
+                                                                <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+                                                            </svg>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                            <Button
-                                                className="min-w-[260px] py-4 text-base"
-                                                onClick={() =>
-                                                    handleUpdateStatus(
-                                                        org.id,
-                                                        statusState[org.id]?.status || org.organizer_approval_status,
-                                                        statusState[org.id]?.rejectionReason || "",
-                                                    )
-                                                }
-                                            >
-                                                Update Organizer Status
-                                            </Button>
+                                                <Button
+                                                    className="min-w-[260px] py-4 text-base"
+                                                    disabled={isUpdating}
+                                                    onClick={() => handleUpdateStatus(org.id, selectedStatus, rejectionReason)}
+                                                >
+                                                    {isUpdating ? 'Updating...' : 'Update Organizer Status'}
+                                                </Button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            ))}
+                                    </article>
+                                );
+                            })}
                         </div>
                     )}
                 </div>
             </main>
+
             <Footer />
         </div>
     );

@@ -9,7 +9,8 @@ export function getApiErrorMessage(error: unknown): string {
         case 400:
             return 'Please check the information you entered.';
         case 401:
-            return 'Invalid email or password.';
+
+            return 'Your session has expired. Please sign in again.';
         case 403:
             return "You don't have permission to perform this action.";
         case 404:
