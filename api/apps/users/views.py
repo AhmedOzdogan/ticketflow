@@ -15,6 +15,7 @@ from .serializers import (
     RegisterSerializer,
     UserMeSerializer,
     UserUpdateSerializer,
+    UserListSerializer,
 )
 
 
@@ -98,6 +99,11 @@ class ChangePasswordView(APIView):
 
         return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
 
+
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.select_related("organizer_profile").order_by("-created_at")
+    serializer_class = UserListSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
 class OrganizerListView(generics.ListAPIView):
     serializer_class = OrganizerListSerializer

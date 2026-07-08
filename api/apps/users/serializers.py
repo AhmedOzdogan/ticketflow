@@ -33,6 +33,25 @@ class OrganizerProfileUpdateSerializer(serializers.ModelSerializer):
         ]
 
 
+class UserListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "phone_number",
+            "role",
+            "is_email_verified",
+            "organizer_approval_status",
+            "profile_image_url",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
 class UserMeSerializer(serializers.ModelSerializer):
     organizer_profile = OrganizerProfileSerializer(read_only=True)
 
