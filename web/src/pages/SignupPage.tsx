@@ -2,13 +2,13 @@ import { useState, type SyntheticEvent } from 'react';
 import { FiBriefcase, FiGlobe, FiLock, FiMail, FiPhone, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-// Import RegisterRequest type from the same module as registerUser
 import type { RegisterRequest } from '../types/auth';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
 import { AccountSwitch } from '../components/ui/AccountSwitch';
 import { Button } from '../components/ui/Button';
 import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
+import { LoginButtons } from '../components/ui/LoginButtons';
 import { toast } from 'sonner';
 import { getApiErrorMessage } from '../utils/getApiErrorMessages';
 
@@ -263,19 +263,32 @@ function SignupPage() {
             <main className="relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8">
                 <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,var(--brand-yellow),transparent_30%),radial-gradient(circle_at_top_right,var(--brand-rose),transparent_28%)] opacity-20" />
 
-                <section className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-[1.05fr_0.95fr]">
-                    <div className="mx-auto w-full max-w-2xl rounded-[2rem] border border-border bg-surface p-6 shadow-2xl shadow-brand-black/10 sm:p-8">
-                        <div className="mb-8">
+                <section className="mx-auto grid max-w-[82rem] items-stretch gap-10 lg:grid-cols-[600px_1fr]">
+                    <div className="mx-auto flex min-h-[960px] w-full max-w-[600px] flex-col rounded-[2rem] border border-border bg-surface p-6 shadow-2xl shadow-brand-black/10 sm:p-8 lg:p-10">
+                        <div>
                             <p className="text-sm font-black uppercase tracking-wide text-primary">Create your account</p>
                             <h1 className="mt-3 text-4xl font-black tracking-tight text-foreground">Join TicketFlow</h1>
                             <p className="mt-3 text-sm leading-6 text-muted">
                                 Sign up as a buyer to purchase tickets, or apply as an organizer to create and manage events.
                             </p>
+                            <div className="mt-7">
+                                <LoginButtons />
+                            </div>
+
+                            <div className="my-7 flex items-center gap-4">
+                                <div className="h-px flex-1 bg-border" />
+                                <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted">
+                                    Or continue with email
+                                </span>
+                                <div className="h-px flex-1 bg-border" />
+                            </div>
                         </div>
 
-                        <AccountSwitch accountType={accountType} setAccountType={setAccountType} />
+                        <div className="mt-2">
+                            <AccountSwitch accountType={accountType} setAccountType={setAccountType} />
+                        </div>
 
-                        <form className="space-y-5" onSubmit={handleSubmit} method="POST">
+                        <form className="mt-6 flex flex-1 flex-col gap-5" onSubmit={handleSubmit} method="POST">
                             <FormFields
                                 fields={baseSignupFields}
                                 values={formData}
@@ -309,12 +322,14 @@ function SignupPage() {
                                 className="grid gap-5 sm:grid-cols-2"
                             />
 
-                            <Button fullWidth size="lg" type="submit" disabled={loading}>
-                                {loading ? 'Creating account...' : accountType === 'buyer' ? 'Create buyer account' : 'Apply as organizer'}
-                            </Button>
+                            <div className="mt-auto pt-2">
+                                <Button fullWidth size="lg" type="submit" disabled={loading}>
+                                    {loading ? 'Creating account...' : accountType === 'buyer' ? 'Create account' : 'Apply as organizer'}
+                                </Button>
+                            </div>
                         </form>
 
-                        <div className="mt-8 border-t border-border pt-6 text-center text-sm font-semibold text-muted">
+                        <div className="mt-7 border-t border-border pt-6 text-center text-sm font-semibold text-muted">
                             Already have an account?{' '}
                             <button type="button" onClick={() => navigate('/login')} className="font-black text-primary hover:text-accent">
                                 Log in
@@ -323,11 +338,11 @@ function SignupPage() {
                     </div>
 
                     <aside className="hidden lg:block">
-                        <div className="sticky top-28 overflow-hidden rounded-[2rem] border border-border bg-surface p-3 shadow-2xl shadow-brand-black/10">
+                        <div className="sticky top-28 h-full overflow-hidden rounded-[2rem] border border-border bg-surface p-3 shadow-2xl shadow-brand-black/10">
                             <img
                                 src="/images/event.webp"
                                 alt="Professional conference audience"
-                                className="h-[760px] w-full rounded-[1.5rem] object-cover"
+                                className="h-full min-h-[960px] w-full rounded-[1.5rem] object-cover"
                             />
                         </div>
                     </aside>

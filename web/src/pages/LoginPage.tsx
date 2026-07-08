@@ -5,6 +5,7 @@ import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
 import { Button } from '../components/ui/Button';
 import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
+import { LoginButtons } from '../components/ui/LoginButtons';
 import { useAuth } from '../context/AuthContext';
 import { getApiErrorMessage } from '../utils/getApiErrorMessages';
 import { toast } from 'sonner';
@@ -109,43 +110,59 @@ function LoginPage() {
             <main className="relative overflow-hidden px-4 py-16 sm:px-6 lg:px-8">
                 <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,var(--brand-yellow),transparent_30%),radial-gradient(circle_at_top_right,var(--brand-rose),transparent_28%)] opacity-20" />
 
-                <section className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-[1.05fr_0.95fr]">
+                <section className="mx-auto grid max-w-[82rem] items-stretch gap-10 lg:grid-cols-[1fr_600px]">
                     <aside className="hidden lg:block">
-                        <div className="sticky top-28 overflow-hidden rounded-[2rem] border border-border bg-surface p-3 shadow-2xl shadow-brand-black/10">
+                        <div className="sticky top-28 h-full overflow-hidden rounded-[2rem] border border-border bg-surface p-3 shadow-2xl shadow-brand-black/10">
                             <img
                                 src="/images/theater.webp"
                                 alt="Event venue with audience seats"
-                                className="h-[620px] w-full rounded-[1.5rem] object-cover"
+                                className="h-full min-h-[900px] w-full rounded-[1.5rem] object-cover"
                             />
                         </div>
                     </aside>
 
-                    <div className="mx-auto w-full max-w-xl rounded-[2rem] border border-border bg-surface p-6 shadow-2xl shadow-brand-black/10 sm:p-8">
-                        <div className="mb-8">
+                    <div className="mx-auto flex min-h-[900px] w-full max-w-[600px] flex-col rounded-[2rem] border border-border bg-surface p-6 shadow-2xl shadow-brand-black/10 sm:p-8 lg:p-10">
+                        <div>
                             <p className="text-sm font-black uppercase tracking-wide text-primary">Welcome back</p>
                             <h1 className="mt-3 text-4xl font-black tracking-tight text-foreground">Log in to TicketFlow</h1>
                             <p className="mt-3 text-sm leading-6 text-muted">
                                 Access your tickets, manage your events, or continue setting up your organizer dashboard.
                             </p>
+
+                            <div className="mt-7">
+                                <LoginButtons />
+                            </div>
+
+                            <div className="my-7 flex items-center gap-4">
+                                <div className="h-px flex-1 bg-border" />
+                                <span className="text-xs font-bold uppercase tracking-[0.2em] text-muted">
+                                    Or continue with email
+                                </span>
+                                <div className="h-px flex-1 bg-border" />
+                            </div>
                         </div>
 
 
-                        <form className="space-y-5" onSubmit={handleSubmit} method="POST">
-                            <FormFields fields={loginFields} values={formData} onChange={handleFieldChange} />
+                        <form className="flex flex-1 flex-col gap-6" onSubmit={handleSubmit} method="POST">
+                            <div className="space-y-5">
+                                <FormFields fields={loginFields} values={formData} onChange={handleFieldChange} />
 
 
-                            <div className="flex justify-end text-sm">
-                                <button type="button" className="font-bold text-primary transition hover:text-accent">
-                                    Forgot password?
-                                </button>
+                                <div className="flex justify-end text-sm">
+                                    <button type="button" className="font-bold text-primary transition hover:text-accent">
+                                        Forgot password?
+                                    </button>
+                                </div>
                             </div>
 
-                            <Button fullWidth size="lg" type="submit" disabled={loading}>
-                                {loading ? 'Logging in...' : 'Log in'}
-                            </Button>
+                            <div className="mt-auto pt-2">
+                                <Button fullWidth size="lg" type="submit" disabled={loading}>
+                                    {loading ? 'Logging in...' : 'Log in'}
+                                </Button>
+                            </div>
                         </form>
 
-                        <div className="mt-8 border-t border-border pt-6 text-center text-sm font-semibold text-muted">
+                        <div className="mt-7 border-t border-border pt-6 text-center text-sm font-semibold text-muted">
                             Don&apos;t have an account?{' '}
                             <button type="button" onClick={() => navigate('/signup')} className="font-black text-primary hover:text-accent">
                                 Create one
