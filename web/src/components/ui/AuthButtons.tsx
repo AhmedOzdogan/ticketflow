@@ -1,5 +1,3 @@
-
-
 import { useEffect, useRef, useState } from 'react';
 import { FiChevronDown, FiGrid, FiHelpCircle, FiLogOut, FiSettings, FiShield, FiUser } from 'react-icons/fi';
 import { TfiTicket } from "react-icons/tfi";
@@ -43,20 +41,33 @@ export function AuthButtons() {
 
     if (!isAuthenticated || !user) {
         return (
-            <>
+            <div className="flex items-center gap-2 sm:gap-0 sm:overflow-hidden sm:rounded-full sm:border sm:border-border sm:bg-surface  sm:shadow-sm">
                 <Button
                     variant="outline"
                     size="sm"
-                    className="hidden sm:inline-flex"
+                    className="size-15 p-0 sm:h-10 sm:w-auto sm:rounded-l-full sm:rounded-r-none sm:border-0 sm:bg-transparent sm:px-5 sm:py-2 sm:shadow-none sm:ring-0"
                     onClick={() => navigate('/login')}
+                    aria-label="Login"
+                    title="Login"
                 >
-                    Login
+                    <FiUser className="size-6 sm:hidden" />
+                    <span className="hidden sm:inline">Login</span>
                 </Button>
 
-                <Button variant="primary" size="sm" onClick={() => navigate('/signup')}>
-                    Sign up
+                <span className="hidden h-10 w-[2px] bg-brand-black sm:block" aria-hidden="true" />
+
+                <Button
+                    variant="primary"
+                    size="sm"
+                    className="size-15 p-0 sm:h-10 sm:w-auto sm:rounded-l-none sm:rounded-r-full  sm:px-5 sm:py-2 sm:shadow-none sm:ring-0"
+                    onClick={() => navigate('/signup')}
+                    aria-label="Sign up"
+                    title="Sign up"
+                >
+                    <FiLogOut className="size-6 rotate-180 sm:hidden" />
+                    <span className="hidden sm:inline">Sign up</span>
                 </Button>
-            </>
+            </div>
         );
     }
 

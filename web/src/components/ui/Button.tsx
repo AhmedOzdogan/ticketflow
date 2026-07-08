@@ -74,11 +74,19 @@ export function ThemeToggle() {
     return (
         <Button
             variant="outline"
-            size="lg"
+            size="sm"
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="size-15 p-0 sm:h-11 sm:w-auto sm:px-4 sm:py-2"
         >
-            {theme === 'dark' ? <FiSun className="size-4" /> : <FiMoon className="size-4" />}
+            <span className="relative flex size-6 items-center justify-center sm:size-4">
+                {theme === 'dark' ? (
+                    <FiSun className="size-6 transition duration-200 sm:size-4" />
+                ) : (
+                    <FiMoon className="size-6 transition duration-200 sm:size-4" />
+                )}
+            </span>
             <span className="hidden sm:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
         </Button>
     );

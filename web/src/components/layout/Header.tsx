@@ -23,7 +23,7 @@ export function Header() {
                         className="flex items-center gap-3 text-left"
                         aria-label="TicketFlow home"
                     >
-                        <img src={logo256} alt="TicketFlow logo" className="size-10 rounded-xl object-contain" />
+                        <img src={logo256} alt="TicketFlow logo" className="size-15 rounded-xl object-contain" />
                         <div className="leading-tight">
                             <p className="text-lg font-bold tracking-tight text-foreground">TicketFlow</p>
                             <p className="hidden text-xs font-medium text-muted-foreground sm:block">

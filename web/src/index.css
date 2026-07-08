@@ -116,8 +116,31 @@ a {
   font: inherit;
 }
 
-button {
+button,
+a,
+[role="button"],
+summary,
+label,
+select,
+input:not([type="text"]):not([type="email"]):not([type="password"]):not([type="search"]):not([type="tel"]):not([type="url"]):not([type="number"]),
+button *,
+a * {
   cursor: pointer;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
 }
 
 ::selection {
