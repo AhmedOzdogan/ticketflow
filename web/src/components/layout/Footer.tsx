@@ -92,6 +92,7 @@ export function Footer() {
                     <p>© {currentYear} TicketFlow. All rights reserved.</p>
                     <p>
                         Built with <span className="font-semibold text-primary">React</span>,{' '}
+                        <span className="font-semibold text-success">Express.js</span>,{' '}
                         <span className="font-semibold text-accent">Django</span>, and{' '}
                         <span className="font-semibold text-secondary">Stripe</span>.
                     </p>
