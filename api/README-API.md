@@ -1,5 +1,3 @@
-
-
 # TicketFlow API
 
 The `api` folder contains the Django backend for TicketFlow, a full-stack event management and ticketing platform.
@@ -234,14 +232,33 @@ Base path:
 |---|---|---|---|
 | POST | `/api/v1/users/register/` | Register a new buyer or organizer and return JWT tokens | No |
 | POST | `/api/v1/users/login/` | Login with email and password and return JWT tokens | No |
-| POST | `/api//v1/users/logout/` | Logout by blacklisting the refresh token | Yes |
-| POST | `/api//v1/users/token/refresh/` | Generate a new access token from a refresh token | No |
+| POST | `/api/v1/users/logout/` | Logout by blacklisting the refresh token | Yes |
+| POST | `/api/v1/users/token/refresh/` | Generate a new access token from a refresh token | No |
 | GET | `/api/v1/users/me/` | Get the current logged-in user profile | Yes |
 | PATCH | `/api/v1/users/me/` | Update the current logged-in user profile | Yes |
 | PUT | `/api/v1/users/me/` | Replace the current logged-in user profile | Yes |
-| GET | `/api/v1/users/organizers/` | Get the list of organizers that is approved rejeccted or waiting | Admin only |
+| GET | `/api/v1/users/` | Get a paginated list of all users with search, filtering and ordering support | Admin only |
 | PATCH | `/api/v1/users/organizers/<uuid:pk>/approve/` | Approve or reject an organizer account | Admin only |
 | PUT | `/api/v1/users/organizers/<uuid:pk>/approve/` | Replace organizer approval status | Admin only |
+
+#### User List Query Parameters
+
+The `GET /api/v1/users/` endpoint supports:
+
+| Query Parameter | Description |
+|---|---|
+| `page` | Page number |
+| `page_size` | Number of results per page (maximum 100) |
+| `search` | Search by email, first name, last name, phone number or organizer company name |
+| `role` | Filter by user role |
+| `organizer_approval_status` | Filter by organizer approval status |
+| `is_email_verified` | Filter by email verification status |
+| `ordering` | Order results by `created_at`, `updated_at`, `email`, `first_name`, `last_name` or `role` |
+
+Example:
+
+```txt
+GET /api/v1/users/?role=organizer&search=music&page=2&page_size=20&ordering=-created_at
 ```
 
 #### Authentication Request Examples
@@ -605,6 +622,11 @@ Completed:
 - Profile update endpoint created
 - Change password endpoint created
 - Organizer approval endpoint created
+- User list endpoint created
+- Pagination added
+- Search added
+- Filtering added
+- Ordering added
 
 Next API steps:
 

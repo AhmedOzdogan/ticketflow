@@ -10,7 +10,6 @@ from .permissions import IsAdmin
 from .serializers import (
     ChangePasswordSerializer,
     LoginSerializer,
-    OrganizerListSerializer,
     OrganizerApprovalSerializer,
     RegisterSerializer,
     UserMeSerializer,
@@ -133,13 +132,6 @@ class UserListView(generics.ListAPIView):
 ]
 
 ordering = ["-created_at"]
-
-class OrganizerListView(generics.ListAPIView):
-    serializer_class = OrganizerListSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdmin]
-
-    def get_queryset(self):
-        return User.objects.filter(role="organizer").select_related("organizer_profile").order_by("-created_at")
 
 
 class OrganizerApprovalView(generics.UpdateAPIView):
