@@ -20,7 +20,7 @@ const initialLoginFormData: LoginFormData = {
     email: '',
     password: '',
     showPassword: false,
-    rememberMe: false,
+    rememberMe: true,
 };
 
 function LoginPage() {
