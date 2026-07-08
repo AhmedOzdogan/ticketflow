@@ -7,6 +7,7 @@ import SignupPage from './pages/SignupPage';
 import FeaturePreview from './pages/FeaturePreview';
 import NotFoundPage from './pages/404';
 import MyProfile from './pages/MyProfile';
+import AdminDashboard from './pages/AdminDashboard';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/feature-preview" element={<FeaturePreview />} />
       <Route path="/my-profile" element={<MyProfile />} />
+      <Route path="/admin-dashboard" element={<AdminDashboard />} />
 
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

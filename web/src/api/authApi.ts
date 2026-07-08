@@ -67,3 +67,51 @@ export async function logout(refresh: string, access: string): Promise<void> {
         },
     );
 }
+
+export async function getCurrentOrganizers(accessToken: string) {
+    console.log('Fetching current organizers with access token:', accessToken);
+    const response = await axios.get(`${API_BASE_URL}/v1/users/organizers/`, {
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
+    });
+
+    return response.data;
+}
+
+export async function updateOrganizerStatus(
+    organizerId: string,
+    organizer_approval_status: 'approved' | 'rejected',
+    rejectionReason: string | null,
+    accessToken: string,
+) {
+    if (
+        organizer_approval_status === 'rejected' &&
+        !rejectionReason?.trim()
+    ) {
+        throw new Error('Rejection reason is required.');
+    }
+
+    const payload: {
+        organizer_approval_status: 'approved' | 'rejected';
+        rejection_reason?: string;
+    } = {
+        organizer_approval_status,
+    };
+
+    if (organizer_approval_status === 'rejected') {
+        payload.rejection_reason = rejectionReason!;
+    }
+
+    const response = await axios.patch(
+        `${API_BASE_URL}/v1/users/organizers/${organizerId}/approve/`,
+        payload,
+        {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        },
+    );
+
+    return response.data;
+}

@@ -81,7 +81,7 @@ export function AuthButtons() {
     }
 
     if (user.role === 'admin') {
-        roleMenuItems.push({ label: 'Admin Dashboard', path: '/admin', icon: <FiShield /> });
+        roleMenuItems.push({ label: 'Admin Dashboard', path: '/admin-dashboard', icon: <FiShield /> });
     }
 
     const handleNavigate = (path: string) => {
