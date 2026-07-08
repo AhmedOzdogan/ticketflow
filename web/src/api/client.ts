@@ -33,7 +33,7 @@ function saveAccessToken(token: string) {
 }
 
 function saveRefreshToken(token: string) {
-    getStorage().setItem('refresh', token)
+    getStorage().setItem('refresh', token);
 }
 
 function clearTokens() {
@@ -47,7 +47,7 @@ function clearTokens() {
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     const accessToken = getAccessToken();
 
-    if (accessToken) {
+    if (accessToken && !config.headers.Authorization) {
         config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
@@ -62,7 +62,35 @@ api.interceptors.response.use(
             _retry?: boolean;
         };
 
+        console.log(originalRequest)
+
         if (!originalRequest) {
+            return Promise.reject(error);
+        }
+
+        // Never attempt token refresh for public authentication endpoints.
+        const publicEndpoints = [
+            '/v1/users/login/',
+            '/v1/users/register/',
+            '/v1/users/token/refresh/',
+        ];
+
+        const requestUrl = originalRequest.url;
+
+        if (
+            requestUrl &&
+            publicEndpoints.some((endpoint) =>
+                requestUrl.includes(endpoint),
+            )
+        ) {
+            return Promise.reject(error);
+        }
+
+        const accessToken = getAccessToken();
+        const refreshToken = getRefreshToken();
+
+        // If there is no authenticated session, do not attempt a token refresh.
+        if (!accessToken || !refreshToken) {
             return Promise.reject(error);
         }
 
@@ -79,15 +107,6 @@ api.interceptors.response.use(
 
         originalRequest._retry = true;
 
-        const refreshToken = getRefreshToken();
-
-        if (!refreshToken) {
-            clearTokens();
-            window.location.href = '/login';
-
-            return Promise.reject(error);
-        }
-
         try {
             const response = await axios.post<{
                 access: string;
@@ -100,7 +119,7 @@ api.interceptors.response.use(
             );
 
             saveAccessToken(response.data.access);
-            saveRefreshToken(response.data.refresh)
+            saveRefreshToken(response.data.refresh);
 
             originalRequest.headers.Authorization =
                 `Bearer ${response.data.access}`;

@@ -88,15 +88,15 @@ function LoginPage() {
                     email: formData.email,
                     password: formData.password,
                 },
-                formData.rememberMe
+                formData.rememberMe,
             );
-            toast.success('Logged in successfully!');
+
+            toast.success('Welcome back! You are now signed in.');
             navigate('/');
         } catch (error) {
             const apiMessage = getApiErrorMessage(error);
             setErrorMessage(apiMessage);
-            toast.error(apiMessage);
-            console.error('Login failed:', error);
+            toast.error(apiMessage)
         } finally {
             setLoading(false);
         }

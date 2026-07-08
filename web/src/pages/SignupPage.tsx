@@ -2,6 +2,8 @@ import { useState, type SyntheticEvent } from 'react';
 import { FiBriefcase, FiGlobe, FiLock, FiMail, FiPhone, FiUser, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+// Import RegisterRequest type from the same module as registerUser
+import type { RegisterRequest } from '../types/auth';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
 import { AccountSwitch } from '../components/ui/AccountSwitch';
@@ -118,19 +120,23 @@ const organizerSignupFields: FormField<SignupFormData>[] = [
     },
 ];
 
-// Commonly used weak passwords that should be avoided
-// Backend already checks for weak passwords, but we can provide immediate feedback on the frontend as well
-const commonPasswordList = ['password', '12345678', 'qwerty', 'abc123',
-    'letmein', '111111', '123123', 'admin', 'welcome', 'monkey', 'login', 'princess',
-    'solo', 'starwars', 'dragon', 'football', 'baseball', 'superman', 'iloveyou', 'master',
-    'hello', 'freedom', 'whatever', 'qazwsx', 'trustno1', '654321', 'jordan', 'harley', 'password1',
-    '1234', '12345',];
-
 function SignupPage() {
     const navigate = useNavigate();
     const [accountType, setAccountType] = useState<AccountType>('buyer');
     const [formData, setFormData] = useState<SignupFormData>(initialSignupFormData);
     const { registerUser } = useAuth();
+
+    const normalizeWebsiteUrl = (website: string) => {
+        const trimmedWebsite = website.trim();
+
+        if (!trimmedWebsite) {
+            return undefined;
+        }
+
+        return /^https?:\/\//i.test(trimmedWebsite)
+            ? trimmedWebsite
+            : `https://${trimmedWebsite}`;
+    };
 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -195,6 +201,9 @@ function SignupPage() {
 
     const handleSubmit = async (e: SyntheticEvent<HTMLFormElement, SubmitEvent>) => {
         e.preventDefault();
+        if (loading) {
+            return;
+        }
         setLoading(true);
         setErrorMessage(null);
         if (formData.password !== formData.confirmPassword) {
@@ -211,33 +220,31 @@ function SignupPage() {
             return;
         }
 
-        if (accountType === 'organizer' && formData.website && !/^https?:\/\//i.test(formData.website)) {
-            formData.website = 'http://' + formData.website;
-        }
+        const normalizedWebsite = accountType === 'organizer'
+            ? normalizeWebsiteUrl(formData.website)
+            : undefined;
 
-        // if password is less than 8 characters, too common or entirely numeric, show error
-        if (formData.password.length < 8 || /^\d+$/.test(formData.password) || commonPasswordList.includes(formData.password.toLowerCase())) {
-            toast.warning('Password must be at least 8 characters long and not entirely numeric');
-            setErrorMessage('Password must be at least 8 characters long and not entirely numeric');
-            setLoading(false);
-            return;
-        }
+        const registerPayload: RegisterRequest = {
+            email: formData.email.trim(),
+            password: formData.password,
+            confirm_password: formData.confirmPassword,
+            first_name: formData.firstName.trim(),
+            last_name: formData.lastName.trim(),
+            phone_number: formData.phoneNumber.trim(),
+            role: accountType === 'buyer' ? 'buyer' : 'organizer',
+            company_name: accountType === 'organizer' ? formData.companyName.trim() : undefined,
+            website_url: normalizedWebsite,
+            organizer_details: accountType === 'organizer' ? formData.organizerDetails.trim() : undefined,
+        };
 
         try {
-            await registerUser({
-                email: formData.email,
-                password: formData.password,
-                confirm_password: formData.confirmPassword,
-                first_name: formData.firstName,
-                last_name: formData.lastName,
-                phone_number: formData.phoneNumber,
-                role: accountType === 'buyer' ? 'buyer' : 'organizer',
-                company_name: accountType === 'organizer' ? formData.companyName : undefined,
-                website_url: accountType === 'organizer' ? formData.website : undefined,
-                organizer_details: accountType === 'organizer' ? formData.organizerDetails : undefined,
-            }, formData.rememberMe);
+            await registerUser(registerPayload, formData.rememberMe);
 
-            toast.success('Signup successful! Please check your email to verify your account.');
+            toast.success(
+                accountType === 'buyer'
+                    ? 'Welcome to TicketFlow! Your account has been created successfully.'
+                    : "Your organizer application has been submitted. We'll review it and notify you once approved.",
+            );
             navigate('/');
         } catch (error) {
             const apiMessage = getApiErrorMessage(error);
@@ -283,6 +290,7 @@ function SignupPage() {
                                         fields={organizerSignupFields}
                                         values={formData}
                                         onChange={handleFieldChange}
+                                        disabled={loading}
                                         className="grid gap-5 sm:grid-cols-2"
                                     />
 
@@ -297,6 +305,7 @@ function SignupPage() {
                                 fields={passwordSignupFields}
                                 values={formData}
                                 onChange={handleFieldChange}
+                                disabled={loading}
                                 className="grid gap-5 sm:grid-cols-2"
                             />
 
