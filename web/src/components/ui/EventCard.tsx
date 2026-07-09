@@ -1,4 +1,4 @@
-import { FiCalendar, FiMapPin } from 'react-icons/fi';
+import { FiArrowRight, FiCalendar, FiMapPin } from 'react-icons/fi';
 import type { EventListItem } from '../../types/events';
 import { Button } from './Button';
 import { useNavigate } from 'react-router-dom';
@@ -30,11 +30,21 @@ export function EventCard({ event, variant = 'default', layout = 'compact' }: Ev
     if (variant === 'hero') {
         return (
             <article className="relative overflow-hidden rounded-[2rem] border border-border bg-surface shadow-2xl shadow-brand-black/10">
-                <img
-                    src={event.cover_image ?? '/placeholder-event.webp'}
-                    alt={event.title}
-                    className="h-72 w-full object-cover sm:h-80"
-                />
+                <div className="relative">
+                    <img
+                        src={event.cover_image ?? '/placeholder-event.webp'}
+                        alt={event.title}
+                        className="h-72 w-full object-cover sm:h-80"
+                    />
+                    <Button
+                        variant="primary"
+                        onClick={goToEventDetails}
+                        className="absolute bottom-5 right-5 z-10 flex items-center gap-2 bg-red-600 px-5 py-2 text-white shadow-lg transition hover:bg-red-700"
+                    >
+                        Details
+                        <FiArrowRight size={16} />
+                    </Button>
+                </div>
 
                 <div className="space-y-6 p-6">
                     <div className="flex items-start justify-between gap-4">
@@ -125,8 +135,10 @@ export function EventCard({ event, variant = 'default', layout = 'compact' }: Ev
                             <div className="text-4xl font-black text-foreground">€{event.ticket_types[0].price}</div>
                         </div>
                         <div className="flex shrink-0 gap-3">
-                            <Button variant="secondary" onClick={goToEventDetails}>Details</Button>
-                            <Button onClick={goToEventDetails}>Get ticket</Button>
+                            <Button variant="secondary" onClick={goToEventDetails} className="flex items-center gap-2">
+                                Details
+                                <FiArrowRight size={16} />
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -169,8 +181,9 @@ export function EventCard({ event, variant = 'default', layout = 'compact' }: Ev
                     <p className="truncate text-sm font-black text-foreground">
                         {event.organizer_name}
                     </p>
-                    <Button variant="secondary" size="sm" onClick={goToEventDetails}>
+                    <Button variant="secondary" size="sm" onClick={goToEventDetails} className="flex items-center gap-1.5">
                         Details
+                        <FiArrowRight size={14} />
                     </Button>
                 </div>
             </div>
