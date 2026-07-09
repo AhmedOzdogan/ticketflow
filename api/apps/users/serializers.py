@@ -34,6 +34,8 @@ class OrganizerProfileUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserListSerializer(serializers.ModelSerializer):
+    organizer_profile = OrganizerProfileSerializer(read_only=True)
+
     class Meta:
         model = User
         fields = [
@@ -46,6 +48,7 @@ class UserListSerializer(serializers.ModelSerializer):
             "is_email_verified",
             "organizer_approval_status",
             "profile_image_url",
+            "organizer_profile",
             "created_at",
             "updated_at",
         ]
@@ -247,3 +250,16 @@ class OrganizerApprovalSerializer(serializers.Serializer):
             "organizer_approval_status": instance.organizer_approval_status,
             "rejection_reason": organizer_profile.rejection_reason if organizer_profile else "",
         }
+
+class UserStatsSerializer(serializers.Serializer):
+    total_users = serializers.IntegerField()
+    buyers = serializers.IntegerField()
+    organizers = serializers.IntegerField()
+    admins = serializers.IntegerField()
+
+    pending_organizers = serializers.IntegerField()
+    approved_organizers = serializers.IntegerField()
+    rejected_organizers = serializers.IntegerField()
+
+    verified_users = serializers.IntegerField()
+    unverified_users = serializers.IntegerField()

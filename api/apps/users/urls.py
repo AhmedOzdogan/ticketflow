@@ -9,6 +9,7 @@ from .views import (
     RegisterView,
     TokenRefresh,
     UserListView,
+    UserStatsAPIView,
 )
 
 app_name = "users"
@@ -22,4 +23,5 @@ urlpatterns = [
     path("change-password/", ChangePasswordView.as_view(), name="change-password"),
     path("", UserListView.as_view(), name="user-list"),
     path("organizers/<uuid:pk>/approve/", OrganizerApprovalView.as_view(), name="approve-organizer"),
+    path("stats/", UserStatsAPIView.as_view(),name="user-stats",),
 ]

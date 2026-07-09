@@ -5,7 +5,12 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from .models import User
+from .models import (
+    User,
+    UserRole,
+    OrganizerApprovalStatus,
+
+)
 from .permissions import IsAdmin
 from .serializers import (
     ChangePasswordSerializer,
@@ -15,6 +20,7 @@ from .serializers import (
     UserMeSerializer,
     UserUpdateSerializer,
     UserListSerializer,
+    UserStatsSerializer,
 )
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -141,3 +147,47 @@ class OrganizerApprovalView(generics.UpdateAPIView):
 
 
 TokenRefresh = TokenRefreshView
+
+class UserStatsAPIView(APIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request):
+        data = {
+            "total_users": User.objects.count(),
+
+            "buyers": User.objects.filter(
+                role=UserRole.BUYER
+            ).count(),
+
+            "organizers": User.objects.filter(
+                role=UserRole.ORGANIZER
+            ).count(),
+
+            "admins": User.objects.filter(
+                role=UserRole.ADMIN
+            ).count(),
+
+            "pending_organizers": User.objects.filter(
+                organizer_approval_status=OrganizerApprovalStatus.PENDING
+            ).count(),
+
+            "approved_organizers": User.objects.filter(
+                organizer_approval_status=OrganizerApprovalStatus.APPROVED
+            ).count(),
+
+            "rejected_organizers": User.objects.filter(
+                organizer_approval_status=OrganizerApprovalStatus.REJECTED
+            ).count(),
+
+            "verified_users": User.objects.filter(
+                is_email_verified=True
+            ).count(),
+
+            "unverified_users": User.objects.filter(
+                is_email_verified=False
+            ).count(),
+        }
+
+        serializer = UserStatsSerializer(data)
+
+        return Response(serializer.data)
