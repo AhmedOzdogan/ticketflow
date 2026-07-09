@@ -5,14 +5,35 @@ import { HowItWorks } from '../components/home/HowItWorks';
 import { StatsSection } from '../components/home/StatsSection';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
+import { useState, useEffect } from 'react';
+import type { EventListItem } from '../types/events';
+import { getEvents } from '../api/eventApi';
 
 function HomePage() {
+    const [events, setEvents] = useState<EventListItem[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function loadEvents() {
+            try {
+                const data = await getEvents({ ordering: '-created_at' });
+                setEvents(data.results);
+            } catch (error) {
+                console.error('Failed to load events', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        loadEvents();
+    }, []);
+
     return (
         <div className="min-h-screen bg-background text-foreground">
             <Header />
             <main>
-                <HeroSection />
-                <FeaturedEvents />
+                <HeroSection featuredEvent={events[0]} loading={loading} />
+                <FeaturedEvents events={events} loading={loading} />
                 <HowItWorks />
                 <StatsSection />
                 <CtaSection />

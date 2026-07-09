@@ -62,8 +62,6 @@ api.interceptors.response.use(
             _retry?: boolean;
         };
 
-        console.log(originalRequest)
-
         if (!originalRequest) {
             return Promise.reject(error);
         }

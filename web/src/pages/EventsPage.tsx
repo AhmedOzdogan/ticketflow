@@ -1,12 +1,70 @@
-import { FiCalendar, FiMapPin, FiSearch, FiSliders, FiUsers } from 'react-icons/fi';
-import featuredEvents from '../data/featuredEvents';
+import { useEffect, useMemo, useState } from 'react';
+import { FiSearch, FiSliders } from 'react-icons/fi';
+import { getEvents } from '../api/eventApi';
+import type { EventListResponse } from '../types/events';
+import EventCard from '../components/ui/EventCard';
+import { Loading } from '../components/ui/Loading';
 import { Button } from '../components/ui/Button';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 
-const categories = ['All', 'Music', 'Festival', 'Theater', 'Conference'];
+const categories = [
+    { label: 'All', value: 'All' },
+    { label: 'Music', value: 'music' },
+    { label: 'Business', value: 'business' },
+    { label: 'Food', value: 'food' },
+    { label: 'Technology', value: 'technology' },
+    { label: 'Sports', value: 'sports' },
+];
 
 function Events() {
+    const [response, setResponse] = useState<EventListResponse | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
+    const [category, setCategory] = useState('All');
+    const [page, setPage] = useState(1);
+    const pageSize = 6;
+
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadEvents() {
+            setLoading(true);
+
+            try {
+                const [data] = await Promise.all([
+                    getEvents({
+                        page,
+                        pageSize,
+                        search: search || undefined,
+                        category: category === 'All' ? undefined : category,
+                        ordering: 'start_date',
+                    }),
+                    new Promise((resolve) => setTimeout(resolve, 700)),
+                ]);
+
+                if (isMounted) {
+                    setResponse(data);
+                }
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        }
+
+        loadEvents();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [page, search, category]);
+
+    const totalPages = useMemo(
+        () => Math.max(1, Math.ceil((response?.count ?? 0) / pageSize)),
+        [response],
+    );
+
     return (
         <div className="min-h-screen bg-background text-foreground">
             <Header />
@@ -58,21 +116,30 @@ function Events() {
                             <input
                                 type="search"
                                 placeholder="Search by event name, city, or category"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(1);
+                                }}
                                 className="w-full rounded-full border border-border bg-background py-3 pl-12 pr-4 text-sm font-semibold text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary"
                             />
                         </div>
 
                         <div className="flex flex-wrap items-center gap-3">
-                            {categories.map((category) => (
+                            {categories.map(({ label, value }) => (
                                 <button
-                                    key={category}
+                                    key={value}
                                     type="button"
-                                    className={`rounded-full px-4 py-2 text-sm font-bold transition ${category === 'All'
+                                    onClick={() => {
+                                        setCategory(value);
+                                        setPage(1);
+                                    }}
+                                    className={`rounded-full px-4 py-2 text-sm font-bold transition ${category === value
                                         ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
                                         : 'border border-border bg-background text-muted hover:border-primary hover:text-primary'
                                         }`}
                                 >
-                                    {category}
+                                    {label}
                                 </button>
                             ))}
 
@@ -93,59 +160,64 @@ function Events() {
                                 <h2 className="mt-3 text-4xl font-black tracking-tight text-foreground">Popular events this season</h2>
                             </div>
 
-                            <p className="text-sm font-semibold text-muted">Showing {featuredEvents.length} events</p>
+                            <p className="text-sm font-semibold text-muted">Showing {response?.count ?? 0} events</p>
                         </div>
 
-                        <div className="grid gap-6 md:grid-cols-2">
-                            {featuredEvents.map((event) => (
-                                <article
-                                    key={event.id}
-                                    className="group grid overflow-hidden rounded-[2rem] border border-border bg-surface shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-black/10 lg:grid-cols-[0.9fr_1.1fr]"
+                        <div className="relative min-h-[360px]">
+                            {loading && <Loading overlay message="Loading events..." />}
+
+                            <div className={`space-y-6 transition-opacity duration-300 ${loading ? 'opacity-40' : 'opacity-100'}`}>
+                                {response?.results.map((event) => (
+                                    <EventCard
+                                        key={event.id}
+                                        event={event}
+                                        layout="horizontal"
+                                    />
+                                ))}
+
+                                {!loading && response?.results.length === 0 && (
+                                    <div className="rounded-[2rem] border border-dashed border-border bg-surface p-10 text-center">
+                                        <p className="text-lg font-black text-foreground">No events found</p>
+                                        <p className="mt-2 text-sm font-semibold text-muted">Try a different search term or category.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        {/* Pagination */}
+                        {response && totalPages > 1 && (
+                            <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    disabled={page === 1 || loading}
+                                    onClick={() => setPage((p) => p - 1)}
                                 >
-                                    <div className="relative min-h-72 overflow-hidden">
-                                        <img
-                                            src={event.image}
-                                            alt={event.title}
-                                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                                        />
-                                        <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-black text-primary-foreground">
-                                            {event.category}
-                                        </span>
-                                        <span className="absolute bottom-4 left-4 rounded-full bg-secondary px-3 py-1 text-xs font-black text-secondary-foreground">
-                                            {event.status}
-                                        </span>
-                                    </div>
+                                    Previous
+                                </Button>
 
-                                    <div className="flex flex-col p-6">
-                                        <h3 className="text-2xl font-black text-foreground">{event.title}</h3>
-                                        <p className="mt-3 text-sm leading-6 text-muted">{event.description}</p>
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
+                                    <button
+                                        key={pageNumber}
+                                        type="button"
+                                        disabled={loading}
+                                        onClick={() => setPage(pageNumber)}
+                                        className={`size-10 rounded-full border font-bold transition ${pageNumber === page
+                                            ? 'border-primary bg-primary text-primary-foreground'
+                                            : 'border-border bg-background hover:border-primary hover:text-primary'
+                                            }`}
+                                    >
+                                        {pageNumber}
+                                    </button>
+                                ))}
 
-                                        <div className="mt-5 space-y-3 text-sm font-semibold text-muted">
-                                            <p className="flex items-center gap-2">
-                                                <FiCalendar className="size-4 text-accent" />
-                                                {event.date}
-                                            </p>
-                                            <p className="flex items-center gap-2">
-                                                <FiMapPin className="size-4 text-accent" />
-                                                {event.location}
-                                            </p>
-                                            <p className="flex items-center gap-2">
-                                                <FiUsers className="size-4 text-accent" />
-                                                Digital tickets and organizer check-in included
-                                            </p>
-                                        </div>
-
-                                        <div className="mt-auto flex flex-col gap-4 pt-8 sm:flex-row sm:items-center sm:justify-between">
-                                            <p className="text-xl font-black text-foreground">{event.price}</p>
-                                            <div className="flex gap-3">
-                                                <Button variant="outline" size="sm">Details</Button>
-                                                <Button size="sm">Get ticket</Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </article>
-                            ))}
-                        </div>
+                                <Button
+                                    variant="outline"
+                                    disabled={page === totalPages || loading}
+                                    onClick={() => setPage((p) => p + 1)}
+                                >
+                                    Next
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </section>
 
