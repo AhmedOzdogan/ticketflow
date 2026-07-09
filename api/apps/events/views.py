@@ -32,11 +32,14 @@ class EventListView(generics.ListAPIView):
     pagination_class = DefaultPagination
     search_fields = [
         "title",
-        "short_description",
         "description",
+        "category",
         "city",
         "country",
         "venue_name",
+        "organizer__first_name",
+        "organizer__last_name",
+        "organizer__email",
     ]
     ordering_fields = [
         "start_date",
@@ -71,7 +74,10 @@ class EventListCreateView(generics.ListCreateAPIView):
     pagination_class = DefaultPagination
     search_fields = [
         "title",
+        "description",
+        "category",
         "city",
+        "country",
         "venue_name",
     ]
     ordering_fields = [

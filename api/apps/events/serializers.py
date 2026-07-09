@@ -32,6 +32,7 @@ class TicketTypeCreateUpdateSerializer(serializers.ModelSerializer):
 
 class EventListSerializer(serializers.ModelSerializer):
     organizer_name = serializers.SerializerMethodField()
+    ticket_types = TicketTypeSerializer(many=True, read_only=True)
 
     class Meta:
         model = Event
@@ -46,6 +47,7 @@ class EventListSerializer(serializers.ModelSerializer):
             "country",
             "start_date",
             "organizer_name",
+            "ticket_types"
         ]
 
     def get_organizer_name(self, obj):
