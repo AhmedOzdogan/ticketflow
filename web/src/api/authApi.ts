@@ -34,6 +34,12 @@ export async function getCurrentUser() {
 
     return response.data;
 }
+
+export async function getStats() {
+    const response = await api.get('/v1/users/stats/')
+    return response.data;
+
+}
 export async function refreshTokenRequest(refresh: string): Promise<RefreshTokenResponse> {
     const response = await api.post<RefreshTokenResponse>('/v1/users/token/refresh/', { refresh });
     return response.data;
@@ -61,8 +67,28 @@ export async function logout(refresh: string): Promise<void> {
     );
 }
 
-export async function getCurrentOrganizers() {
-    const response = await api.get('/v1/users/organizers/');
+interface GetUsersParams {
+    role?: string;
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    ordering?: string;
+    organizerApprovalStatus?: string;
+    isEmailVerified?: boolean;
+}
+
+export async function getUsers(params: GetUsersParams = {}) {
+    const response = await api.get('/v1/users/', {
+        params: {
+            role: params.role,
+            page: params.page,
+            page_size: params.pageSize,
+            search: params.search,
+            ordering: params.ordering,
+            organizer_approval_status: params.organizerApprovalStatus,
+            is_email_verified: params.isEmailVerified,
+        },
+    });
 
     return response.data;
 }
