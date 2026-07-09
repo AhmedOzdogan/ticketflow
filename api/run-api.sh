@@ -17,17 +17,20 @@ fi
 
 source .venv/bin/activate
 
-echo "🐘 Starting PostgreSQL Docker container..."
+echo " Starting PostgreSQL Docker container..."
 cd ..
 docker compose up -d postgres
 
 cd api
 
-echo "✅ Running Django checks..."
+echo " Running Django checks..."
 python manage.py check
 
-echo "🗄️ Running migrations..."
+echo "Running migrations"
+python manage.py makemigrations
+
+echo " Running migrations..."
 python manage.py migrate
 
-echo "🌍 Starting Django server..."
+echo " Starting Django server..."
 python manage.py runserver

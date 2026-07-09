@@ -16,10 +16,7 @@ The Django API is responsible for the core business logic of TicketFlow:
 - Admin approval for organizers
 - Event management
 - Ticket type management
-- Order management
-- Ticket generation
-- Check-in workflow
-- Payment confirmation from the Express payment service
+- Order management (future feature)
 
 ---
 
@@ -81,20 +78,6 @@ api/
       views.py
       urls.py
       tests/
-
-    tickets/
-      models.py
-      serializers.py
-      views.py
-      urls.py
-      tests/
-
-    payments/
-      models.py
-      serializers.py
-      views.py
-      urls.py
-      tests/
 ```
 
 ---
@@ -136,13 +119,13 @@ REJECTED
 
 Responsible for:
 
-- Event categories
 - Event creation
 - Event editing
+- Event deletion
 - Event publishing
 - Event filtering
 - Event searching
-- Ticket type creation
+- Ticket type management
 
 Event statuses:
 
@@ -171,48 +154,6 @@ PENDING
 PAID
 FAILED
 CANCELLED
-REFUNDED
-```
-
----
-
-### Tickets App
-
-Responsible for:
-
-- Generating tickets after successful payment
-- Creating unique ticket codes
-- Listing buyer tickets
-- Validating tickets
-- Check-in workflow
-- Preventing duplicate check-ins
-
-Ticket statuses:
-
-```txt
-ACTIVE
-CHECKED_IN
-CANCELLED
-REFUNDED
-```
-
----
-
-### Payments App
-
-Responsible for:
-
-- Recording payment state
-- Receiving internal confirmation from the Express payment service
-- Marking orders as paid
-- Triggering ticket generation
-
-Payment statuses:
-
-```txt
-CREATED
-SUCCEEDED
-FAILED
 REFUNDED
 ```
 
@@ -414,20 +355,25 @@ When an organizer is approved or rejected, the organizer profile stores `reviewe
 ### Events
 
 ```txt
-GET    /api/events/
-POST   /api/events/
-GET    /api/events/:id/
-PATCH  /api/events/:id/
-DELETE /api/events/:id/
+GET    /api/v1/events/
+GET    /api/v1/events/<slug:slug>/
+GET    /api/v1/events/manage/
+POST   /api/v1/events/manage/
+GET    /api/v1/events/manage/<uuid:pk>/
+PATCH  /api/v1/events/manage/<uuid:pk>/
+PUT    /api/v1/events/manage/<uuid:pk>/
+DELETE /api/v1/events/manage/<uuid:pk>/
 ```
 
 ### Ticket Types
 
 ```txt
-GET    /api/events/:eventId/ticket-types/
-POST   /api/events/:eventId/ticket-types/
-PATCH  /api/ticket-types/:id/
-DELETE /api/ticket-types/:id/
+GET    /api/v1/events/<uuid:event_id>/ticket-types/
+POST   /api/v1/events/<uuid:event_id>/ticket-types/
+GET    /api/v1/ticket-types/<uuid:pk>/
+PATCH  /api/v1/ticket-types/<uuid:pk>/
+PUT    /api/v1/ticket-types/<uuid:pk>/
+DELETE /api/v1/ticket-types/<uuid:pk>/
 ```
 
 ### Orders
@@ -437,22 +383,6 @@ POST /api/orders/
 GET  /api/orders/my-orders/
 GET  /api/orders/:id/
 ```
-
-### Tickets
-
-```txt
-GET  /api/tickets/my-tickets/
-GET  /api/tickets/:id/
-POST /api/tickets/check-in/
-```
-
-### Internal Payment Confirmation
-
-```txt
-POST /api/internal/payments/confirm/
-```
-
-This endpoint should only be called by the Express payment service using an internal shared secret.
 
 ---
 
@@ -571,8 +501,7 @@ The API should include tests for:
 
 - Public users can view published events
 - Draft events are hidden from public users
-- Organizer can create ticket types for own event
-- Ticket capacity cannot be negative
+- Organizer can manage ticket types for own event
 
 ### Orders
 
@@ -580,19 +509,6 @@ The API should include tests for:
 - Order total is calculated correctly
 - Order starts as pending
 - Paid order cannot be paid twice
-
-### Tickets
-
-- Ticket is generated only after payment succeeds
-- Buyer can only view own tickets
-- Organizer can only check in tickets for own event
-- Duplicate check-in is rejected
-
-### Payments
-
-- Internal payment confirmation requires secret
-- Successful payment marks order as paid
-- Successful payment triggers ticket generation
 
 ---
 
@@ -646,8 +562,8 @@ Completed:
 
 Next API steps:
 
-- Connect `apps.users.urls` in `config/urls.py` if not already connected
-- Run migrations for Simple JWT blacklist tables
-- Test all authentication endpoints with curl, Postman, or DRF browsable API
-- Add tests for authentication
-- Start the Events app models and endpoints
+- Test all authentication endpoints.
+- Build the Orders app.
+- Integrate Stripe payment service.
+- Generate tickets after successful payment.
+- Add automated API tests.
