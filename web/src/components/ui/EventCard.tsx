@@ -1,6 +1,7 @@
 import { FiCalendar, FiMapPin } from 'react-icons/fi';
 import type { EventListItem } from '../../types/events';
 import { Button } from './Button';
+import { useNavigate } from 'react-router-dom';
 
 type EventCardProps = {
     event: EventListItem;
@@ -9,6 +10,11 @@ type EventCardProps = {
 };
 
 export function EventCard({ event, variant = 'default', layout = 'compact' }: EventCardProps) {
+    const navigate = useNavigate();
+
+    const goToEventDetails = () => {
+        navigate(`/events/${event.slug}`);
+    };
     const eventDate = new Date(event.start_date).toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
@@ -119,8 +125,8 @@ export function EventCard({ event, variant = 'default', layout = 'compact' }: Ev
                             <div className="text-4xl font-black text-foreground">€{event.ticket_types[0].price}</div>
                         </div>
                         <div className="flex shrink-0 gap-3">
-                            <Button variant="secondary">Details</Button>
-                            <Button>Get ticket</Button>
+                            <Button variant="secondary" onClick={goToEventDetails}>Details</Button>
+                            <Button onClick={goToEventDetails}>Get ticket</Button>
                         </div>
                     </div>
                 </div>
@@ -163,7 +169,7 @@ export function EventCard({ event, variant = 'default', layout = 'compact' }: Ev
                     <p className="truncate text-sm font-black text-foreground">
                         {event.organizer_name}
                     </p>
-                    <Button variant="secondary" size="sm">
+                    <Button variant="secondary" size="sm" onClick={goToEventDetails}>
                         Details
                     </Button>
                 </div>
