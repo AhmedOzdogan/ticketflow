@@ -238,6 +238,7 @@ Base path:
 | PATCH | `/api/v1/users/me/` | Update the current logged-in user profile | Yes |
 | PUT | `/api/v1/users/me/` | Replace the current logged-in user profile | Yes |
 | GET | `/api/v1/users/` | Get a paginated list of all users with search, filtering and ordering support | Admin only |
+| GET | `/api/v1/stats/` | Get Stats of the all users | Admin only |
 | PATCH | `/api/v1/users/organizers/<uuid:pk>/approve/` | Approve or reject an organizer account | Admin only |
 | PUT | `/api/v1/users/organizers/<uuid:pk>/approve/` | Replace organizer approval status | Admin only |
 
@@ -375,6 +376,21 @@ Reject organizer:
 {
   "organizer_approval_status": "rejected",
   "rejection_reason": "Company details are incomplete."
+}
+```
+Stats:
+
+```json
+{
+    "total_users": 38,
+    "buyers": 14,
+    "organizers": 18,
+    "admins": 6,
+    "pending_organizers": 5,
+    "approved_organizers": 8,
+    "rejected_organizers": 5,
+    "verified_users": 15,
+    "unverified_users": 23
 }
 ```
 
