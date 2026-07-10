@@ -10,6 +10,7 @@ import {
 } from "react-icons/fi";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
+import { PageHeader } from "../components/ui/PageHeader";
 import { FormFields, type FormField } from "../components/ui/Form";
 import { MdConfirmationNumber } from "react-icons/md";
 import { createEvent } from "../api/eventApi";
@@ -249,15 +250,10 @@ export default function CreateEventsPage() {
             <Header />
             <main className="min-h-screen bg-[#F7F7F8] px-4 py-8 text-[#1E1E1E] dark:bg-[#0B0F14] dark:text-[#E6E6E6] sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-7xl space-y-8">
-                    <section className="rounded-[2rem] border border-border bg-surface p-6 shadow-2xl shadow-brand-black/10 sm:p-8">
-                        <p className="text-sm font-black uppercase tracking-wide text-primary">
-                            Organizer Dashboard
-                        </p>
-                        <h1 className="mt-3 text-4xl font-black tracking-tight text-foreground">Create Event</h1>
-                        <p className="mt-2 text-sm font-semibold text-muted">
-                            Create your event and start selling tickets.
-                        </p>
-                    </section>
+                    <PageHeader
+                        title="Organizer Dashboard"
+                        description="Create your event and start selling tickets"
+                    />
 
                     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
                         <form

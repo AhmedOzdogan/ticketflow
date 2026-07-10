@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
-import { FiBriefcase, FiCalendar, FiCheckCircle, FiClock, FiEye, FiEyeOff, FiLock, FiPhone, FiShield, FiUser, FiXCircle } from 'react-icons/fi';
+import { FiBriefcase, FiCalendar, FiEye, FiEyeOff, FiLock, FiPhone, FiUser } from 'react-icons/fi';
 import { toast } from 'sonner';
-
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
+import { PageHeader } from '../components/ui/PageHeader';
+import { SettingsCard } from "../components/ui/SettingsCard";
+import { formatDate, getStatusStyles, getStatusIcon } from '../utils/myProfileHelpers';
+import { CardHeader } from '../components/ui/CardHeader';
 import AuthGate from '../pages/AuthGate';
 import { Button } from '../components/ui/Button';
 import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
@@ -11,27 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import type { OrganizerApprovalStatus, UserRole } from '../types/user';
 import { changePassword, editProfile, getCurrentUser } from '../api/authApi';
 import { getApiErrorMessage } from '../utils/getApiErrorMessages';
-
-type ProfileFormData = {
-    firstName: string;
-    lastName: string;
-    phoneNumber: string;
-};
-
-type OrganizerFormData = {
-    companyName: string;
-    websiteUrl: string;
-    organizerDetails: string;
-};
-
-type PasswordFormData = {
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-    showCurrentPassword: boolean;
-    showNewPassword: boolean;
-    showConfirmPassword: boolean;
-};
+import type { ProfileFormData, OrganizerFormData, PasswordFormData } from '../types/myProfile';
 
 const initialProfileFormData: ProfileFormData = {
     firstName: '',
@@ -66,29 +49,6 @@ const statusLabels: Record<OrganizerApprovalStatus, string> = {
     approved: 'Approved',
     rejected: 'Rejected',
 };
-
-function formatDate(value?: string | null) {
-    if (!value) return 'Not available';
-
-    return new Date(value).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-}
-
-function getStatusStyles(status: OrganizerApprovalStatus) {
-    if (status === 'approved') return 'border-green-200 bg-green-50 text-green-700';
-    if (status === 'rejected') return 'border-red-200 bg-red-50 text-red-700';
-    if (status === 'pending') return 'border-yellow-200 bg-yellow-50 text-yellow-700';
-    return 'border-border bg-background text-muted';
-}
-
-function getStatusIcon(status: OrganizerApprovalStatus) {
-    if (status === 'approved') return <FiCheckCircle />;
-    if (status === 'rejected') return <FiXCircle />;
-    return <FiClock />;
-}
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
     return (
@@ -334,7 +294,6 @@ function MyProfile() {
     }
 
     const organizerStatus = user.organizer_approval_status;
-    const fullName = `${user.first_name} ${user.last_name}`.trim() || user.email;
 
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -344,40 +303,20 @@ function MyProfile() {
                 <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,var(--brand-yellow),transparent_28%),radial-gradient(circle_at_top_right,var(--brand-rose),transparent_26%)] opacity-20" />
 
                 <div className="mx-auto max-w-7xl space-y-8">
-                    <section className="rounded-[2rem] border border-border bg-surface p-6 shadow-2xl shadow-brand-black/10 sm:p-8">
-                        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <p className="text-sm font-black uppercase tracking-wide text-primary">My Profile</p>
-                                <h1 className="mt-3 text-4xl font-black tracking-tight text-foreground">{fullName}</h1>
-                                <p className="mt-2 text-sm font-semibold text-muted">Manage your TicketFlow account details and security.</p>
-                            </div>
-
-                            <div className="flex flex-wrap gap-3">
-                                <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-black text-primary">
-                                    <FiShield />
-                                    {roleLabels[user.role]}
-                                </span>
-                                {user.role === 'organizer' && (
-                                    <span className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-black ${getStatusStyles(organizerStatus)}`}>
-                                        {getStatusIcon(organizerStatus)}
-                                        {statusLabels[organizerStatus]}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </section>
+                    <PageHeader
+                        title="My Profile"
+                        description="Manage your TicketFlow account details and security."
+                        role={user.role}
+                        organizerStatus={organizerStatus}
+                    />
 
                     <div className="grid auto-rows-min gap-8 lg:grid-cols-2">
-                        <section className="flex h-full flex-col rounded-[2rem] border border-border bg-surface p-6 shadow-xl shadow-brand-black/5 sm:p-8">
-                            <div className="mb-6 flex items-center gap-3">
-                                <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                                    <FiUser />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-black text-foreground">Personal Information</h2>
-                                    <p className="text-sm font-semibold text-muted">Update your basic account details.</p>
-                                </div>
-                            </div>
+                        <SettingsCard>
+                            <CardHeader
+                                icon={FiUser}
+                                title="Personal Information"
+                                description="Update your basic account details."
+                            />
 
                             <FormFields
                                 fields={profileFields}
@@ -397,19 +336,14 @@ function MyProfile() {
                                     {profileLoading ? 'Saving...' : 'Save Changes'}
                                 </Button>
                             </div>
-                        </section>
+                        </SettingsCard>
 
-                        <section className="flex h-full flex-col rounded-[2rem] border border-border bg-surface p-6 shadow-xl shadow-brand-black/5 sm:p-8">
-                            <div className="mb-6 flex items-center gap-3">
-                                <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                                    <FiLock />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-black text-foreground">Security</h2>
-                                    <p className="text-sm font-semibold text-muted">Change your account password.</p>
-                                </div>
-                            </div>
-
+                        <SettingsCard>
+                            <CardHeader
+                                icon={FiLock}
+                                title="Security"
+                                description="Change your account password."
+                            />
                             <FormFields
                                 fields={passwordFields}
                                 values={passwordFormData}
@@ -429,20 +363,17 @@ function MyProfile() {
                                     {passwordLoading ? 'Changing...' : 'Change Password'}
                                 </Button>
                             </div>
-                        </section>
+                        </SettingsCard>
 
                         {user.role === 'organizer' && (
-                            <section className="flex h-full flex-col rounded-[2rem] border border-border bg-surface p-6 shadow-xl shadow-brand-black/5 sm:p-8">
+                            <SettingsCard>
                                 <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex size-11 items-center justify-center rounded-2xl bg-secondary/15 text-secondary">
-                                            <FiBriefcase />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-black text-foreground">Organizer Information</h2>
-                                            <p className="text-sm font-semibold text-muted">Manage the public details of your organizer profile.</p>
-                                        </div>
-                                    </div>
+                                    <CardHeader
+                                        icon={FiBriefcase}
+                                        title="Organizer Information"
+                                        description="Manage the public details of your organizer profile."
+                                        iconClassName="bg-secondary/15 text-secondary"
+                                    />
 
                                     <span className={`inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-black ${getStatusStyles(organizerStatus)}`}>
                                         {getStatusIcon(organizerStatus)}
@@ -470,19 +401,15 @@ function MyProfile() {
                                     className="grid gap-5 md:grid-cols-2"
                                 />
 
-                            </section>
+                            </SettingsCard>
                         )}
 
-                        <section className="flex h-full flex-col rounded-[2rem] border border-border bg-surface p-6 shadow-xl shadow-brand-black/5 sm:p-8">
-                            <div className="mb-6 flex items-center gap-3">
-                                <div className="flex size-11 items-center justify-center rounded-2xl bg-accent/10 text-accent">
-                                    <FiCalendar />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-black text-foreground">Account Information</h2>
-                                    <p className="text-sm font-semibold text-muted">Read-only account metadata.</p>
-                                </div>
-                            </div>
+                        <SettingsCard>
+                            <CardHeader
+                                icon={FiCalendar}
+                                title="Account Information"
+                                description="read-only account metadata."
+                            />
 
                             <div className="space-y-5">
                                 <ReadOnlyField label="Email verified" value={user.is_email_verified ? 'Yes' : 'No'} />
@@ -502,7 +429,7 @@ function MyProfile() {
                                     </p>
                                 </div>
                             )}
-                        </section>
+                        </SettingsCard>
                     </div>
                 </div>
             </main>
