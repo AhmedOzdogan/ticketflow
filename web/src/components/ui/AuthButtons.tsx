@@ -88,6 +88,7 @@ export function AuthButtons() {
         roleMenuItems.push(
             { label: 'Dashboard', path: '/organizer/dashboard', icon: <FiGrid /> },
             { label: 'My Events', path: '/organizer/events', icon: <TfiTicket /> },
+            { label: 'Create Event', path: '/organizer/create-event', icon: <TfiTicket /> }
         );
     }
 

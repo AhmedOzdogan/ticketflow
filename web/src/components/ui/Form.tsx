@@ -1,11 +1,11 @@
 import type { ChangeEvent, ReactNode } from 'react';
 
-export type FieldValue = string | boolean;
+export type FieldValue = string | number | boolean;
 
 export type FormField<TValues extends object = Record<string, FieldValue>> = {
     name: Extract<keyof TValues, string>;
     label: string;
-    type?: 'text' | 'email' | 'password' | 'tel' | 'url' | 'checkbox' | 'textarea';
+    type?: 'text' | 'email' | 'password' | 'tel' | 'url' | 'number' | 'datetime-local' | 'checkbox' | 'textarea' | 'select';
     placeholder?: string;
     autoComplete?: string;
     required?: boolean;
@@ -15,6 +15,12 @@ export type FormField<TValues extends object = Record<string, FieldValue>> = {
     onRightIconClick?: () => void;
     helperText?: string;
     containerClassName?: string;
+    inputClassName?: string;
+    labelClassName?: string;
+    min?: number | string;
+    max?: number | string;
+    step?: number | string;
+    options?: { label: string; value: string }[];
 };
 
 type FormFieldsProps<TValues extends object> = {
@@ -32,9 +38,16 @@ export function FormFields<TValues extends object>({
     disabled = false,
     className = 'space-y-5',
 }: FormFieldsProps<TValues>) {
-    const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleInputChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = event.target;
-        onChange(name as Extract<keyof TValues, string>, value);
+        const nextValue =
+            event.target.type === 'number'
+                ? event.target.value === ''
+                    ? ''
+                    : Number(event.target.value)
+                : value;
+
+        onChange(name as Extract<keyof TValues, string>, nextValue);
     };
 
     const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -52,7 +65,7 @@ export function FormFields<TValues extends object>({
                     return (
                         <label
                             key={field.name}
-                            className={`flex items-start gap-3 text-sm font-semibold leading-6 text-muted ${field.containerClassName ?? ''}`}
+                            className={`flex items-start gap-3 text-sm font-semibold leading-6 text-muted ${field.containerClassName ?? ''} ${field.labelClassName ?? ''}`}
                         >
                             <input
                                 name={field.name}
@@ -68,9 +81,35 @@ export function FormFields<TValues extends object>({
                     );
                 }
 
+                if (fieldType === 'select') {
+                    return (
+                        <label key={field.name} className={`block ${field.containerClassName ?? ''} ${field.labelClassName ?? ''}`}>
+                            <span className="text-sm font-bold text-foreground">{field.label}</span>
+                            <select
+                                name={field.name}
+                                value={String(fieldValue ?? '')}
+                                onChange={handleInputChange}
+                                required={field.required}
+                                disabled={disabled}
+                                className={`mt-2 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary ${field.inputClassName ?? ''}`}
+                            >
+                                <option value="" disabled>
+                                    {field.placeholder ?? 'Select an option'}
+                                </option>
+                                {field.options?.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                            {field.helperText && <p className="mt-2 text-xs font-semibold text-muted">{field.helperText}</p>}
+                        </label>
+                    );
+                }
+
                 if (fieldType === 'textarea') {
                     return (
-                        <label key={field.name} className={`block ${field.containerClassName ?? ''}`}>
+                        <label key={field.name} className={`block ${field.containerClassName ?? ''} ${field.labelClassName ?? ''}`}>
                             <span className="text-sm font-bold text-foreground">{field.label}</span>
                             <textarea
                                 name={field.name}
@@ -80,7 +119,7 @@ export function FormFields<TValues extends object>({
                                 placeholder={field.placeholder}
                                 required={field.required}
                                 disabled={disabled}
-                                className="mt-2 w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary"
+                                className={`mt-2 w-full resize-none rounded-2xl border border-border bg-background px-4 py-3 text-sm font-semibold text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary ${field.inputClassName ?? ''}`}
                             />
                             {field.helperText && <p className="mt-2 text-xs font-semibold text-muted">{field.helperText}</p>}
                         </label>
@@ -88,7 +127,7 @@ export function FormFields<TValues extends object>({
                 }
 
                 return (
-                    <label key={field.name} className={`block ${field.containerClassName ?? ''}`}>
+                    <label key={field.name} className={`block ${field.containerClassName ?? ''} ${field.labelClassName ?? ''}`}>
                         <span className="text-sm font-bold text-foreground">{field.label}</span>
                         <div className="mt-2 flex items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3 transition focus-within:border-primary">
                             {field.icon && <span className="size-5 text-muted">{field.icon}</span>}
@@ -101,7 +140,10 @@ export function FormFields<TValues extends object>({
                                 autoComplete={field.autoComplete}
                                 required={field.required}
                                 disabled={disabled}
-                                className="w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground"
+                                className={`w-full bg-transparent text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground ${field.inputClassName ?? ''}`}
+                                min={field.min}
+                                max={field.max}
+                                step={field.step}
                             />
                             {field.rightIcon && (
                                 <button

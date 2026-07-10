@@ -37,3 +37,17 @@ export interface EventDetail extends EventListItem {
 export type EventListResponse = PaginatedResponse<EventListItem>;
 
 export type EventDetailResponse = EventDetail;
+
+export interface CreateEvent {
+    title: string;
+    description: string;
+    cover_image: File | null;
+    category: string;
+    venue_name: string;
+    address: string;
+    city: string;
+    country: string;
+    start_date: string;
+    end_date: string;
+    ticket_types: Array<Omit<TicketType, "id" | "remaining_quantity">>;
+}

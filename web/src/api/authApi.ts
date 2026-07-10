@@ -60,7 +60,6 @@ export async function refreshToken(refresh: string): Promise<RefreshTokenRespons
 }
 
 export async function logout(refresh: string): Promise<void> {
-    console.log("refresh token is", refresh)
     await api.post(
         '/v1/users/logout/',
         { refresh },

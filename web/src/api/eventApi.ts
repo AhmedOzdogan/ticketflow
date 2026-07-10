@@ -3,6 +3,7 @@ import { api } from './client';
 import type {
     EventDetailResponse,
     EventListResponse,
+    CreateEvent,
 } from '../types/events';
 
 type GetEventsParams = {
@@ -47,4 +48,18 @@ export async function getEventDetails(
     );
 
     return response.data;
+}
+
+export async function createEvent(payload: FormData): Promise<CreateEvent> {
+    const response = await api.post(
+        "/v1/events/manage/",
+        payload,
+        {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        },
+    );
+    return response.data;
+
 }
