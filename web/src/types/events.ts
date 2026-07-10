@@ -14,6 +14,8 @@ export interface TicketType {
     remaining_quantity: number;
 }
 
+export type TicketInput = Omit<TicketType, "id" | "remaining_quantity">;
+
 export interface EventListItem {
     id: string;
     title: string;

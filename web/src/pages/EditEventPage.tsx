@@ -1,22 +1,39 @@
 import { useEventForm } from "../hooks/useEventForm";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
-import { PageHeader } from "../components/ui/PageHeader";
+import type { CreateEvent } from "../types/events";
 import { EventForm } from "../components/events/EventForm";
-import AuthGate from '../pages/AuthGate';
-import { useAuth } from '../context/AuthContext';
+import { PageHeader } from "../components/ui/PageHeader";
 import { EventSummary } from "../components/events/EventSummary";
 import {
-    emptyTicket,
     basicInformationFields,
     locationFields,
     dateTimeFields,
     ticketFields,
 } from "../data/eventFormFields";
 
-export default function CreateEventsPage() {
-    const { user } = useAuth();
+const mockEvent: CreateEvent = {
+    title: "React Summit 2025",
+    description: "Europe's biggest React conference.",
+    cover_image: null,
+    category: "technology",
+    venue_name: "RAI Amsterdam",
+    address: "Europaplein 24",
+    city: "Amsterdam",
+    country: "Netherlands",
+    start_date: "2025-10-15T09:00",
+    end_date: "2025-10-15T18:00",
+    ticket_types: [
+        {
+            name: "General Admission",
+            description: "Standard ticket",
+            price: "49.99",
+            total_quantity: 250,
+        },
+    ],
+};
 
+export default function EditEventPage() {
     const {
         form,
         setForm,
@@ -26,27 +43,13 @@ export default function CreateEventsPage() {
         addTicketType,
         removeTicketType,
         updateTicket,
-        handleCreateEvent,
-    } = useEventForm({
-        title: "",
-        description: "",
-        cover_image: null,
-        category: "",
-        venue_name: "",
-        address: "",
-        city: "",
-        country: "",
-        start_date: "",
-        end_date: "",
-        ticket_types: [{ ...emptyTicket }],
-    });
+    } = useEventForm(mockEvent);
 
-    if (!user) {
-        return <AuthGate />;
-    }
-    if (user.role !== 'admin' && user.role !== 'organizer') {
-        return <AuthGate variant="unauthorized" />;
-    }
+    const handleUpdateEvent = async () => {
+        console.log(form);
+        // TODO:
+        // await updateEvent(eventId, formData);
+    };
 
     return (
         <>
@@ -54,19 +57,19 @@ export default function CreateEventsPage() {
             <main className="min-h-screen bg-[#F7F7F8] px-4 py-8 text-[#1E1E1E] dark:bg-[#0B0F14] dark:text-[#E6E6E6] sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-7xl space-y-8">
                     <PageHeader
-                        title="Organizer Dashboard"
-                        description="Create your event and start selling tickets"
+                        title="Edit Event"
+                        description="Update your event information."
                     />
 
                     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
                         <EventForm
-                            formId="create-event-form"
+                            formId="edit-event-form"
                             form={form}
                             basicInformationFields={basicInformationFields}
                             locationFields={locationFields}
                             dateTimeFields={dateTimeFields}
                             ticketFields={ticketFields}
-                            onSubmit={handleCreateEvent}
+                            onSubmit={handleUpdateEvent}
                             onFieldChange={updateField}
                             onCoverImageChange={(file) =>
                                 setForm((prev) => ({
@@ -87,16 +90,16 @@ export default function CreateEventsPage() {
 
                             isSubmitting={isSubmitting}
 
-                            formId="create-event-form"
+                            formId="edit-event-form"
 
-                            submitLabel="Publish Event"
+                            submitLabel="Save Changes"
 
-                            submittingLabel="Publishing..."
+                            submittingLabel="Saving..."
 
                         />
                     </div>
                 </div>
-            </main>
+            </main >
             <Footer />
         </>
     );
