@@ -225,7 +225,7 @@ export default function CreateEventsPage() {
             // Keep the loading animation visible briefly
             await new Promise((resolve) => setTimeout(resolve, 1000));
 
-            toast.success("Event created successfully!");
+            toast.success("Event created successfully! Please wait while our admins review it and it will be published.");
             navigate('/')
         } catch (error) {
             const message = getApiErrorMessage(error);
