@@ -56,8 +56,9 @@ class EventListView(generics.ListAPIView):
 
 class EventDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.AllowAny]
-    serializer_class = EventDetailSerializer
-    queryset = Event.objects.select_related(
+    queryset = Event.objects.filter(
+        status=Status.PUBLISHED,
+    ).select_related(
         "organizer"
     ).prefetch_related("ticket_types")
     lookup_field = "slug"
