@@ -16,11 +16,12 @@ app_name = "events"
 urlpatterns = [
     # Public Events
     path("", EventListView.as_view(), name="event-list"),
-    path("<slug:slug>/", EventDetailView.as_view(), name="event-detail"),
 
     # Organizer / Admin Events
     path("manage/", EventListCreateView.as_view(), name="event-list-create"),
     path("manage/<uuid:pk>/", EventManageView.as_view(), name="event-manage"),
+
+    path("<slug:slug>/", EventDetailView.as_view(), name="event-detail"),
 
     # Ticket Types
     path(
