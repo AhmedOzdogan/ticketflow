@@ -48,6 +48,10 @@ export type EventListPublicItem = Omit<
     ticket_types: PublicTicketType[];
 };
 
+export type EventListPaginatedResponse = PaginatedResponse<EventListItem>;
+
+export type PublicEventListPaginatedResponse = PaginatedResponse<EventListPublicItem>;
+
 export type TicketInput = Omit<TicketType, "id" | "remaining_quantity">;
 
 export interface UpdateTicketInput extends TicketInput {
