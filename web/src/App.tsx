@@ -24,7 +24,7 @@ function App() {
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
       <Route path="/events/:slug" element={<EventDetailPage />} />
       <Route path="/organizer/create-event/" element={<CreateEventsPage />} />
-      <Route path="/organizer/edit-event/" element={<EditEventPage />} />
+      <Route path="/organizer/edit-event/:slug" element={<EditEventPage />} />
 
 
       <Route path="*" element={<NotFoundPage />} />

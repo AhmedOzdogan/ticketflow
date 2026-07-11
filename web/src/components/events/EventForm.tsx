@@ -54,16 +54,15 @@ export function EventForm({
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!form.cover_image) {
-            setPreviewUrl(null);
-            return;
+        if (form.cover_image) {
+            const url = URL.createObjectURL(form.cover_image);
+            setPreviewUrl(url);
+
+            return () => URL.revokeObjectURL(url);
         }
 
-        const url = URL.createObjectURL(form.cover_image);
-        setPreviewUrl(url);
-
-        return () => URL.revokeObjectURL(url);
-    }, [form.cover_image]);
+        setPreviewUrl(form.cover_image_url ?? null);
+    }, [form.cover_image, form.cover_image_url]);
 
     return (
         <form
@@ -133,7 +132,7 @@ export function EventForm({
                             />
 
                             <span className="font-semibold">
-                                {form.cover_image?.name}
+                                {form.cover_image?.name ?? "Current cover image"}
                             </span>
 
                             <span className="mt-1 text-sm text-gray-500 dark:text-gray-400">

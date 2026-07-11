@@ -44,6 +44,7 @@ export interface CreateEvent {
     title: string;
     description: string;
     cover_image: File | null;
+    cover_image_url?: string;
     category: string;
     venue_name: string;
     address: string;
