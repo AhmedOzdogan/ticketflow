@@ -90,7 +90,7 @@ export async function getManageEventDetails(
 // Create event for admins and organizers
 export async function createEvent(payload: FormData): Promise<CreateEvent> {
     const response = await api.post<CreateEvent>(
-        '/v1/events/manage/',
+        '/v1/events/create/',
         payload,
         {
             headers: {

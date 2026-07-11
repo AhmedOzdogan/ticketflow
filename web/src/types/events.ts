@@ -11,6 +11,7 @@ export interface EventListItem {
     slug: string;
     description: string;
     cover_image: string | null;
+    cover_image_url?: File | null;
     category: string;
     venue_name: string;
     address: string;
@@ -62,6 +63,7 @@ export interface CreateEvent {
     title: string;
     description: string;
     cover_image: File | null;
+    cover_image_url?: string | null;
     category: string;
     venue_name: string;
     address: string;

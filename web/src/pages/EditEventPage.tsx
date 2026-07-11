@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { editEvent, getManageEventDetails } from "../api/eventApi";
 import { getApiErrorMessage } from "../utils/getApiErrorMessages";
-import type { CreateEvent } from "../types/events";
+import type { UpdateEvent } from "../types/events";
 import { useEventForm } from "../hooks/useEventForm";
 import { Header } from "../components/layout/Header";
 import { Footer } from "../components/layout/Footer";
@@ -12,6 +12,7 @@ import { EventForm } from "../components/events/EventForm";
 import AuthGate from '../pages/AuthGate';
 import { useAuth } from '../context/AuthContext';
 import { EventSummary } from "../components/events/EventSummary";
+import { useNavigate } from "react-router-dom";
 import {
     emptyTicket,
     basicInformationFields,
@@ -24,6 +25,7 @@ export default function EditEventsPage() {
     const { user } = useAuth();
     const { slug } = useParams<{ slug: string }>();
     const [isLoading, setIsLoading] = useState(true);
+    const navigate = useNavigate()
 
     const {
         form,
@@ -38,6 +40,7 @@ export default function EditEventsPage() {
         title: "",
         description: "",
         cover_image: null,
+        cover_image_url: null,
         category: "",
         venue_name: "",
         address: "",
@@ -55,9 +58,9 @@ export default function EditEventsPage() {
                 return;
             }
 
+
             try {
                 const event = await getManageEventDetails(slug);
-
                 setForm({
                     title: event.title,
                     description: event.description,
@@ -68,8 +71,15 @@ export default function EditEventsPage() {
                     address: event.address,
                     city: event.city,
                     country: event.country,
-                    start_date: event.start_date,
-                    end_date: event.end_date,
+
+                    start_date: event.start_date
+                        ? new Date(event.start_date).toISOString().slice(0, 16)
+                        : "",
+
+                    end_date: event.end_date
+                        ? new Date(event.end_date).toISOString().slice(0, 16)
+                        : "",
+
                     ticket_types: event.ticket_types.map((ticket) => ({
                         id: ticket.id,
                         name: ticket.name,
@@ -77,7 +87,7 @@ export default function EditEventsPage() {
                         price: ticket.price,
                         total_quantity: ticket.total_quantity,
                     })),
-                } satisfies CreateEvent);
+                } satisfies UpdateEvent);
             } catch (error) {
                 toast.error(getApiErrorMessage(error));
             } finally {
@@ -135,6 +145,7 @@ export default function EditEventsPage() {
 
             await editEvent(slug, formData);
             toast.success("Event updated successfully.");
+            navigate('/organizer/my-events')
         } catch (error) {
             toast.error(getApiErrorMessage(error));
         }
