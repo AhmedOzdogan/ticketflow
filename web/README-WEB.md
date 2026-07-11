@@ -1,25 +1,23 @@
-
-
 # TicketFlow Web
 
 The `web` folder contains the React frontend for TicketFlow, a full-stack event management and ticketing platform.
 
-This frontend is built with **React**, **TypeScript**, **Vite**, **Tailwind CSS v4**, **React Router**, and **React Icons**.
+This frontend is built with **React**, **TypeScript**, **Vite**, **Tailwind CSS v4**, **React Router**, **React Icons**, and **Sonner** for notifications.
 
 ---
 
 ## Purpose
 
-The web app is responsible for the user-facing experience of TicketFlow:
+The web app delivers the public event discovery experience plus authenticated buyer, organizer, and admin workflows for TicketFlow.
 
-- Public homepage
-- Event discovery page
-- Login page
-- Signup page
-- Buyer account flow
-- Organizer application flow
-- Future organizer dashboard
-- Future buyer ticket dashboard
+Core responsibilities:
+
+- Public landing page and event discovery
+- Login and signup workflows
+- User profile and security management
+- Organizer event creation, editing, and management
+- Admin user and organizer approval dashboard
+- Public event detail views and organizer preview mode
 
 ---
 
@@ -31,8 +29,8 @@ The web app is responsible for the user-facing experience of TicketFlow:
 - Tailwind CSS v4
 - React Router DOM
 - React Icons
+- Sonner
 - ESLint
-- Prettier
 
 ---
 
@@ -45,30 +43,75 @@ web/
     logo_256.png
 
   src/
+    api/
+      authApi.ts
+      eventApi.ts
+
     components/
+      admin/
+        AdminLayout.tsx
+        AdminSidebar.tsx
+        AdminTable.tsx
+        AdminToolbar.tsx
+        AdminTopbar.tsx
+        StatusBadge.tsx
+      events/
+        EventForm.tsx
+        EventSummary.tsx
       home/
         CtaSection.tsx
         FeaturedEvents.tsx
         HeroSection.tsx
         HowItWorks.tsx
         StatsSection.tsx
-
       layout/
         Footer.tsx
         Header.tsx
-
       ui/
+        AccountSwitch.tsx
+        AuthButtons.tsx
+        Badge.tsx
         Button.tsx
-
+        Card.tsx
+        CardHeader.tsx
+        EventCard.tsx
+        Form.tsx
+        Loading.tsx
+        LoginButtons.tsx
+        MobileNavigation.tsx
+        PageHeader.tsx
+        SettingsCard.tsx
+    context/
+      AuthContext.tsx
     data/
+      eventFormFields.ts
       featuredEvents.ts
-
+    hooks/
+      useEventForm.ts
     pages/
+      404.tsx
+      AdminDashboard.tsx
+      AuthGate.tsx
+      CreateEventsPage.tsx
+      EditEventPage.tsx
+      EventDetailPage.tsx
       EventsPage.tsx
+      FeaturePreview.tsx
       HomePage.tsx
       LoginPage.tsx
+      MyEvents.tsx
+      MyProfile.tsx
       SignupPage.tsx
-
+    types/
+      api.ts
+      auth.ts
+      common.ts
+      events.ts
+      myProfile.ts
+      user.ts
+    utils/
+      getApiErrorMessages.ts
+      myProfileHelpers.tsx
     App.tsx
     index.css
     main.tsx
@@ -76,7 +119,7 @@ web/
 
 ---
 
-## Current Pages
+## Pages and Logic
 
 ### Home Page
 
@@ -86,17 +129,12 @@ Route:
 /
 ```
 
-Sections:
+Logic:
 
-- Header
-- Hero section
-- Featured events
-- How it works
-- Stats section
-- Call-to-action section
-- Footer
-
----
+- Fetches public events from `getEvents()` on mount
+- Renders `HeroSection` with the first featured event
+- Displays featured events, product explanation, stats, and CTA sections
+- Includes `Header` and `Footer` for consistent layout
 
 ### Events Page
 
@@ -106,22 +144,14 @@ Route:
 /events
 ```
 
-Features:
+Logic:
 
-- Page hero
-- Search bar UI
-- Category filter buttons
-- Event cards
-- Details and ticket buttons
-- Organizer call-to-action section
-
-The event data currently comes from:
-
-```txt
-src/data/featuredEvents.ts
-```
-
----
+- Fetches paginated events from `getEvents()` whenever `page`, `search`, or `category` changes
+- Provides search and category filter controls
+- Renders event cards using `EventCard`
+- Uses a loading overlay while fetching data
+- Includes pagination with previous/next and page numbers
+- Shows an empty state if no events match filters
 
 ### Login Page
 
@@ -131,23 +161,14 @@ Route:
 /login
 ```
 
-Features:
+Logic:
 
-- Buyer / Organizer switch
-- Controlled email input
-- Controlled password input
-- Remember me checkbox
-- Submit handler with login payload
-
-Current behavior:
-
-```txt
-The form logs the login payload to the browser console.
-```
-
-Later this will be connected to the Django authentication API.
-
----
+- Renders a login form with email, password, and remember-me fields
+- Supports password visibility toggle
+- Uses `useAuth()` to call `loginUser()`
+- Handles loading state and API errors
+- Displays toast notifications for success and failure
+- Redirects to home on successful login
 
 ### Signup Page
 
@@ -157,50 +178,139 @@ Route:
 /signup
 ```
 
-Features:
+Logic:
 
-- Buyer / Organizer switch
-- Controlled form inputs
-- Buyer signup fields
-- Organizer-specific fields
-- Admin approval notice for organizers
-- Password confirmation check
-- Terms agreement checkbox
+- Renders buyer and organizer signup in a single form
+- Includes fields for name, email, phone, and password
+- Shows organizer-only fields for company name, website, and organizer details
+- Validates passwords and terms acceptance
+- Normalizes organizer website URLs before submission
+- Uses `registerUser()` from `AuthContext`
+- Displays toast messages for success and failure
 
-Buyer fields:
+### Feature Preview Page
 
-- First name
-- Last name
-- Email address
-- Phone number
-- Password
-- Confirm password
-- Terms agreement
-
-Organizer additional fields:
-
-- Company / organization name
-- Website or social page
-- Organizer details
-- Admin approval notice
-
-Current behavior:
+Route:
 
 ```txt
-The form logs the signup payload to the browser console.
+/feature-preview
 ```
 
-Later this will be connected to the Django registration API.
+Logic:
+
+- Serves as a portfolio placeholder for future pages
+- Explains that this page is intentionally not implemented in the portfolio version
+- Provides navigation back to the previous page and home
+
+### My Profile Page
+
+Route:
+
+```txt
+/my-profile
+```
+
+Logic:
+
+- Protected by `AuthGate` for authenticated users
+- Pre-fills profile data from `AuthContext`
+- Allows updating personal details via `editProfile()`
+- Supports password changes via `changePassword()`
+- Shows organizer profile details for organizers only
+- Displays approval status, rejection reasons, and pending review status
+- Includes read-only metadata cards for account timestamps and verification state
+
+### Admin Dashboard
+
+Route:
+
+```txt
+/admin-dashboard
+```
+
+Logic:
+
+- Protected admin-only page using `AuthGate`
+- Uses admin layout components for sidebar, toolbar, and table
+- Fetches user lists with `getUsers()` and dashboard metrics with `getStats()`
+- Supports buyer, organizer, and admin views
+- Provides search and organizer status filters
+- Allows approving and rejecting organizer applications
+- Sends updates through `updateOrganizerStatus()` and refreshes data
+- Includes pagination and admin error handling
+
+### Event Detail Page
+
+Routes:
+
+```txt
+/events/:slug
+/organizer/events/preview/:id
+```
+
+Logic:
+
+- Loads public event details via `getEventDetails()` for slug-based pages
+- Loads organizer preview/edit details via `getManageEventDetails()` when an ID is present
+- Displays event metadata, venue, date, ticket types, and feature highlights
+- Maintains ticket quantity state and calculates totals
+- Includes preview banners and publication workflow for organizers
+
+### Create Event Page
+
+Route:
+
+```txt
+/organizer/create-event/
+```
+
+Logic:
+
+- Protected organizer/admin page using `AuthGate`
+- Uses `useEventForm()` to manage event creation state and ticket types
+- Renders `EventForm` and `EventSummary`
+- Supports cover image upload, event details, location, date/time, and ticket management
+- Submits event creation through the event form hook
+
+### Edit Event Page
+
+Route:
+
+```txt
+/organizer/edit-event/:slug
+```
+
+Logic:
+
+- Protected organizer/admin page using `AuthGate`
+- Fetches existing event details via `getManageEventDetails(slug)`
+- Pre-fills the event form and ticket types for editing
+- Submits updates using `editEvent()` with `FormData`
+- Redirects to organizer event list after successful save
+
+### My Events Page
+
+Route:
+
+```txt
+/organizer/my-events
+```
+
+Logic:
+
+- Protected organizer/admin page using `AuthGate`
+- Fetches organizer-owned events from `getMyEvents()` with pagination
+- Supports search, ordering, and status filtering
+- Computes counts for published, draft, and rejected events
+- Renders event cards with badges, location, date, tickets, and action buttons
+- Enables preview and edit actions based on event status
+- Includes loading state, empty state, and pagination
 
 ---
 
 ## Routing
 
-React Router is configured in:
-
-```txt
-src/App.tsx
-```
+React Router is configured in `src/App.tsx`.
 
 Current routes:
 
@@ -209,53 +319,124 @@ Current routes:
 <Route path="/events" element={<EventsPage />} />
 <Route path="/login" element={<LoginPage />} />
 <Route path="/signup" element={<SignupPage />} />
+<Route path="/feature-preview" element={<FeaturePreview />} />
+<Route path="/my-profile" element={<MyProfile />} />
+<Route path="/admin-dashboard" element={<AdminDashboard />} />
+<Route path="/events/:slug" element={<EventDetailPage />} />
+<Route path="/organizer/create-event/" element={<CreateEventsPage />} />
+<Route path="/organizer/edit-event/:slug" element={<EditEventPage />} />
+<Route path="/organizer/my-events" element={<MyEvents />} />
+<Route path="/organizer/events/preview/:id" element={<EventDetailPage />} />
+<Route path="*" element={<NotFoundPage />} />
 ```
 
-Navigation is handled with:
-
-```tsx
-useNavigate()
-```
-
-The header uses button-based navigation instead of regular anchor links.
+Navigation uses `useNavigate()` and protected pages use `AuthGate`.
 
 ---
 
 ## Styling System
 
-Global styles are defined in:
+Global styles are defined in `src/index.css`.
 
-```txt
-src/index.css
+The project uses Tailwind CSS v4 with CSS variables and semantic tokens.
+
+Semantic colors include:
+
+- `--background`
+- `--foreground`
+- `--surface`
+- `--surface-muted`
+- `--border`
+- `--muted`
+- `--muted-foreground`
+- `--primary`
+- `--secondary`
+- `--accent`
+- `--success`
+- `--warning`
+- `--danger`
+
+Example usage:
+
+```tsx
+<div className="bg-background text-foreground">
+  <div className="border border-border bg-surface">
+    <button className="bg-primary text-primary-foreground">Submit</button>
+  </div>
+</div>
 ```
 
-The project uses Tailwind CSS v4 with CSS variables and semantic color names.
+---
 
-Main brand colors:
+## Authentication and API
 
-```css
---brand-rose: #d12d4e;
---brand-yellow: #fcd051;
---brand-orange: #ed8c18;
---brand-black: #000003;
+Auth state is managed by `src/context/AuthContext.tsx`.
+
+API modules:
+
+- `src/api/eventApi.ts`
+- `src/api/authApi.ts`
+
+Key API flows:
+
+- `getEvents()` for public event listings
+- `getEventDetails()` for public event details
+- `getManageEventDetails()` for organizer preview/edit details
+- `getMyEvents()` for organizer-owned event listings
+- `getUsers()` for admin user lists
+- `updateOrganizerStatus()` for organizer approvals
+- `getStats()` for admin dashboard metrics
+- `editProfile()`, `changePassword()`, and `getCurrentUser()` for profile management
+
+---
+
+## Reusable Components
+
+Reusable UI components include:
+
+- `Button`
+- `FormFields`
+- `EventCard`
+- `Loading`
+- `PageHeader`
+- `SettingsCard`
+- `CardHeader`
+- `Header` and `Footer`
+- Admin UI components under `src/components/admin/`
+- Event creation components under `src/components/events/`
+
+---
+
+## Development Commands
+
+Install dependencies:
+
+```bash
+npm install
 ```
 
-Semantic colors:
+Run local development server:
 
-```css
---background
---foreground
---surface
---surface-muted
---border
---muted
---muted-foreground
---primary
---secondary
---accent
---success
---warning
---danger
+```bash
+npm run dev
+```
+
+Build production output:
+
+```bash
+npm run build
+```
+
+Preview production build:
+
+```bash
+npm run preview
+```
+
+Run linting:
+
+```bash
+npm run lint
 ```
 
 Example usage:
@@ -364,66 +545,3 @@ Use public assets like this:
 <img src="/images/concert.webp" alt="Concert crowd" />
 ```
 
----
-
-## Development Commands
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Run local development server:
-
-```bash
-npm run dev
-```
-
-Build production output:
-
-```bash
-npm run build
-```
-
-Preview production build:
-
-```bash
-npm run preview
-```
-
-Run linting:
-
-```bash
-npm run lint
-```
-
----
-
-## Current Status
-
-Completed:
-
-- React TypeScript setup
-- Tailwind CSS v4 setup
-- Brand colors and dark mode variables
-- Reusable button component
-- Theme toggle
-- Header
-- Footer
-- Homepage sections
-- Events page
-- Login page
-- Signup page
-- Controlled form inputs
-
-Next frontend steps:
-
-- Add form validation messages
-- Add loading and error states
-- Create reusable input component
-- Create event details page
-- Connect login/signup to Django API
-- Add buyer dashboard
-- Add organizer dashboard
-- Add Playwright tests
