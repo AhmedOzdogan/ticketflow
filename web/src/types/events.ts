@@ -5,6 +5,26 @@ export interface PaginatedResponse<T> {
     results: T[];
 }
 
+export interface EventListItem {
+    id: string;
+    title: string;
+    slug: string;
+    description: string;
+    cover_image: string | null;
+    category: string;
+    venue_name: string;
+    address: string;
+    city: string;
+    country: string;
+    start_date: string;
+    end_date: string;
+    status: string;
+    created_at: string;
+    updated_at: string;
+    organizer_name: string;
+    ticket_types: TicketType[];
+}
+
 export interface TicketType {
     id: string;
     name: string;
@@ -14,37 +34,30 @@ export interface TicketType {
     remaining_quantity: number;
 }
 
+export type PublicTicketType = Omit<TicketType, "id" | "total_quantity">;
+
+export type EventListPublicItem = Omit<
+    EventListItem,
+    | "id"
+    | "end_date"
+    | "status"
+    | "created_at"
+    | "updated_at"
+    | "ticket_types"
+> & {
+    ticket_types: PublicTicketType[];
+};
+
 export type TicketInput = Omit<TicketType, "id" | "remaining_quantity">;
 
-export interface EventListItem {
-    id: string;
-    title: string;
-    slug: string;
-    cover_image: string | null;
-    category: string;
-    venue_name: string;
-    city: string;
-    country: string;
-    start_date: string;
-    organizer_name: string;
-    ticket_types: TicketType[];
+export interface UpdateTicketInput extends TicketInput {
+    id?: string;
 }
-
-export interface EventDetail extends EventListItem {
-    description: string;
-    address: string;
-    end_date: string;
-}
-
-export type EventListResponse = PaginatedResponse<EventListItem>;
-
-export type EventDetailResponse = EventDetail;
 
 export interface CreateEvent {
     title: string;
     description: string;
     cover_image: File | null;
-    cover_image_url?: string;
     category: string;
     venue_name: string;
     address: string;
@@ -52,5 +65,11 @@ export interface CreateEvent {
     country: string;
     start_date: string;
     end_date: string;
-    ticket_types: Array<Omit<TicketType, "id" | "remaining_quantity">>;
+    ticket_types: TicketInput[];
 }
+export type UpdateEvent = Partial<
+    Omit<CreateEvent, "ticket_types" | "cover_image">
+> & {
+    cover_image?: File | null;
+    ticket_types?: UpdateTicketInput[];
+};
