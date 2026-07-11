@@ -14,7 +14,7 @@ app_name = "events"
 
 urlpatterns = [
     # Organizer / Admin Events
-    path("manage/", EventListManageView.as_view(), name="event-list"),
+    path("manage/", EventListManageView.as_view(), name="event-manage-list"),
     path("manage/<uuid:id>/", EventManageView.as_view(), name="event-manage"),
     path("create/", EventCreateView.as_view(), name="event-create"),
 

@@ -26,12 +26,12 @@ class TicketTypeSerializer(serializers.ModelSerializer):
             or request.user.role not in ["organizer", "admin"]
         ):
             fields.pop("id", None)
-            fields.pop("total_quantity",None)
+            fields.pop("total_quantity", None)
 
         return fields
 
 class TicketTypeCreateUpdateSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
+    id = serializers.UUIDField(required=False)
 
     class Meta:
         model = TicketType
@@ -53,6 +53,7 @@ class EventListSerializer(serializers.ModelSerializer):
         fields = [
             "title",
             "slug",
+            "description",
             "cover_image",
             "category",
             "venue_name",
@@ -102,7 +103,11 @@ class EventDetailSerializer(serializers.ModelSerializer):
       fields = super().get_fields()
       request = self.context.get("request")
 
-      if not request or request.user.role != "admin":
+      if (
+            not request
+            or not request.user.is_authenticated
+            or request.user.role != "admin"
+        ):
           fields["status"].read_only = True
       return fields
 
