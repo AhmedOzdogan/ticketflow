@@ -335,46 +335,345 @@ Stats:
 }
 ```
 
-### Organizer Approval Notes
+⸻
 
-Organizer approval is currently handled through the users app:
+## Events
 
-```txt
-PATCH /api/users/organizers/<uuid:pk>/approve/
-```
-
-Allowed approval values:
+Base path:
 
 ```txt
-approved
-rejected
+/api/v1/events/
 ```
 
-When an organizer is approved or rejected, the organizer profile stores `reviewed_at`. If the organizer is rejected, `rejection_reason` is required.
+### Event Endpoints
 
-### Events
+| Method | Endpoint | Description | Authorization |
+| --- | --- | --- | --- |
+| GET | `/api/v1/events/` | Return paginated published events | Public |
+| GET | `/api/v1/events/<slug:slug>/` | Return a published event by slug | Public |
+| GET | `/api/v1/events/manage/` | Return the authenticated organizer's events or all events for an admin | Approved Organizer or Admin |
+| POST | `/api/v1/events/create/` | Create a new event | Approved Organizer or Admin |
+| GET | `/api/v1/events/manage/<uuid:id>/` | Return a single event by ID | Approved Organizer or Admin  |
+| PATCH | `/api/v1/events/manage/<uuid:id>/` | Partially update an event | Approved Organizer or Admin  |
+| PUT | `/api/v1/events/manage/<uuid:id>/` | Fully replace an event | Approved Organizer or Admin  |
+| DELETE | `/api/v1/events/manage/<uuid:id>/` | Delete an event | Approved Organizer or Admin  |
+
+---
+
+### Authorization
+
+#### Public Endpoints
 
 ```txt
-GET    /api/v1/events/
-GET    /api/v1/events/<slug:slug>/
-GET    /api/v1/events/manage/
-POST   /api/v1/events/manage/
-GET    /api/v1/events/manage/<uuid:pk>/
-PATCH  /api/v1/events/manage/<uuid:pk>/
-PUT    /api/v1/events/manage/<uuid:pk>/
-DELETE /api/v1/events/manage/<uuid:pk>/
+GET /api/v1/events/
+GET /api/v1/events/<slug:slug>/
 ```
 
-### Ticket Types
+These endpoints:
+
+- Do not require authentication.
+- Return only events whose status is `published`.
+- Use the public event serializer.
+- Do not expose the event `id`.
+- Do not expose ticket type `id`s.
+
+---
+
+#### Organizer/Admin Event List
 
 ```txt
-GET    /api/v1/events/<uuid:event_id>/ticket-types/
-POST   /api/v1/events/<uuid:event_id>/ticket-types/
-GET    /api/v1/ticket-types/<uuid:pk>/
-PATCH  /api/v1/ticket-types/<uuid:pk>/
-PUT    /api/v1/ticket-types/<uuid:pk>/
-DELETE /api/v1/ticket-types/<uuid:pk>/
+GET /api/v1/events/manage/
 ```
+
+Requires an authenticated **approved organizer** or **admin**.
+
+- Organizers receive only events they own.
+- Admins receive every event.
+
+Conceptually:
+
+```python
+# Organizer
+Event.objects.filter(organizer=request.user)
+
+# Admin
+Event.objects.all()
+```
+
+---
+
+#### Event Management
+
+```txt
+GET    /api/v1/events/manage/<uuid:id>/
+PATCH  /api/v1/events/manage/<uuid:id>/
+PUT    /api/v1/events/manage/<uuid:id>/
+DELETE /api/v1/events/manage/<uuid:id>/
+```
+
+Requires an authenticated **approved organizer** or **admin**.
+
+- Organizers may retrieve, update and delete **only their own events**.
+- Admins may retrieve, update and delete **any event**.
+- Events are looked up by their UUID `id`.
+
+---
+
+### Public Event Response
+
+Example response from:
+
+```txt
+GET /api/v1/events/
+GET /api/v1/events/<slug:slug>/
+```
+
+```json
+{
+  "title": "Summer Music Festival",
+  "slug": "summer-music-festival",
+  "cover_image": "https://example.com/event.jpg",
+  "category": "concert",
+  "venue_name": "Olympia Park",
+  "city": "Munich",
+  "country": "Germany",
+  "start_date": "2026-08-20T18:00:00Z",
+  "organizer_name": "TicketFlow Events",
+  "ticket_types": [
+    {
+      "name": "General Admission",
+      "description": "Standing ticket",
+      "price": "49.99",
+      "total_quantity": 500,
+      "remaining_quantity": 420
+    }
+  ]
+}
+```
+
+Public responses intentionally **do not expose** event IDs or ticket type IDs.
+
+---
+
+### Organizer/Admin Event Response
+
+Organizer and admin endpoints return the complete event data required for management.
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "title": "Summer Music Festival",
+  "slug": "summer-music-festival",
+  "description": "Outdoor live music festival.",
+  "cover_image": "https://example.com/event.jpg",
+  "category": "concert",
+  "venue_name": "Olympia Park",
+  "address": "Spiridon-Louis-Ring 21",
+  "city": "Munich",
+  "country": "Germany",
+  "start_date": "2026-08-20T18:00:00Z",
+  "end_date": "2026-08-20T23:00:00Z",
+  "status": "draft",
+  "created_at": "2026-07-11T09:00:00Z",
+  "updated_at": "2026-07-11T10:00:00Z",
+  "organizer_name": "TicketFlow Events",
+  "ticket_types": [
+    {
+      "id": "9e675a76-2454-4ebd-b4a2-d12d476ef755",
+      "name": "General Admission",
+      "description": "Standing ticket",
+      "price": "49.99",
+      "total_quantity": 500,
+      "remaining_quantity": 420
+    }
+  ]
+}
+```
+
+The event ID and ticket type IDs are included because they are required for update and delete operations.
+
+---
+
+### Event List Query Parameters
+
+Both public and organizer/admin event lists support pagination, filtering, searching and ordering.
+
+| Query Parameter | Description |
+| --- | --- |
+| `page` | Page number |
+| `page_size` | Number of results per page |
+| `search` | Search by supported event fields |
+| `category` | Filter by category |
+| `city` | Filter by city |
+| `country` | Filter by country |
+| `ordering` | Order by `start_date`, `created_at` or `title` |
+
+Use `-` before an ordering field for descending order.
+
+Examples:
+
+```txt
+GET /api/v1/events/?city=Munich&ordering=start_date
+```
+
+```txt
+GET /api/v1/events/manage/?ordering=-created_at&page=1&page_size=10
+```
+
+```txt
+GET /api/v1/events/manage/?search=550e8400-e29b-41d4-a716-446655440000
+```
+
+---
+
+### Create Event
+
+Example request body:
+
+```json
+{
+  "title": "Summer Music Festival",
+  "description": "Outdoor live music festival.",
+  "cover_image": "https://example.com/event.jpg",
+  "category": "concert",
+  "venue_name": "Olympia Park",
+  "address": "Spiridon-Louis-Ring 21",
+  "city": "Munich",
+  "country": "Germany",
+  "start_date": "2026-08-20T18:00:00Z",
+  "end_date": "2026-08-20T23:00:00Z",
+  "status": "draft",
+  "ticket_types": [
+    {
+      "name": "General Admission",
+      "description": "Standing ticket",
+      "price": "49.99",
+      "total_quantity": 500
+    },
+    {
+      "name": "VIP",
+      "description": "VIP access",
+      "price": "149.99",
+      "total_quantity": 50
+    }
+  ]
+}
+```
+
+Notes:
+
+- The authenticated user is automatically assigned as the organizer.
+- `event.id` is generated automatically.
+- `event.slug` is generated automatically.
+- `ticket_type.id` is generated automatically.
+- `remaining_quantity` is calculated automatically.
+
+---
+
+### PATCH Event
+
+Endpoint:
+
+```txt
+PATCH /api/v1/events/manage/<uuid:id>/
+```
+
+`PATCH` updates only the fields supplied in the request.
+
+Example:
+
+```json
+{
+  "title": "Updated Summer Music Festival",
+  "venue_name": "Updated Olympia Park"
+}
+```
+
+---
+
+### PUT Event
+
+Endpoint:
+
+```txt
+PUT /api/v1/events/manage/<uuid:id>/
+```
+
+`PUT` replaces the complete writable resource.
+
+```json
+{
+  "title": "Updated Summer Music Festival",
+  "description": "Updated outdoor live music festival.",
+  "cover_image": "https://example.com/updated-event.jpg",
+  "category": "concert",
+  "venue_name": "Olympia Park",
+  "address": "Spiridon-Louis-Ring 21",
+  "city": "Munich",
+  "country": "Germany",
+  "start_date": "2026-08-20T18:00:00Z",
+  "end_date": "2026-08-20T23:00:00Z",
+  "status": "draft",
+  "ticket_types": [
+    {
+      "id": "9e675a76-2454-4ebd-b4a2-d12d476ef755",
+      "name": "General Admission",
+      "description": "Updated standing ticket",
+      "price": "54.99",
+      "total_quantity": 600
+    },
+    {
+      "name": "Backstage",
+      "description": "Backstage access",
+      "price": "249.99",
+      "total_quantity": 20
+    }
+  ]
+}
+```
+
+---
+
+### Nested Ticket Type Updates
+
+When updating ticket types:
+
+- Include an existing `id` to update a ticket type.
+- Omit the `id` to create a new ticket type.
+- `remaining_quantity` is read-only.
+- The API recalculates `remaining_quantity` whenever `total_quantity` changes.
+- Ticket types omitted from the submitted list may be deleted by the nested update logic.
+
+---
+
+### Delete Event
+
+Endpoint:
+
+```txt
+DELETE /api/v1/events/manage/<uuid:id>/
+```
+
+No request body is required.
+
+Returns:
+
+```txt
+204 No Content
+```
+
+Only the event owner or an admin may delete an event.
+
+---
+
+## Ticket Types
+
+Ticket types are managed as nested objects through the Event create and update endpoints.
+
+There are currently no standalone Ticket Type endpoints.
+
+- Public endpoints do not expose ticket type IDs.
+- Organizer/Admin endpoints expose ticket type IDs so existing ticket types can be updated.
 
 ### Orders
 
