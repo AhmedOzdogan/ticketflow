@@ -9,6 +9,7 @@ from django.utils.crypto import get_random_string
 
 class Status(models.TextChoices):
     DRAFT = "draft", _("Draft")
+    PENDING = "pending", _("Pending")
     PUBLISHED = "published", _("Published")
     CANCELLED = "cancelled", _("Cancelled")
     COMPLETED = "completed", _("Completed")

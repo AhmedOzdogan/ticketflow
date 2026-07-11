@@ -113,11 +113,18 @@ class EventDetailSerializer(serializers.ModelSerializer):
 
 
 class EventCreateUpdateSerializer(serializers.ModelSerializer):
-    ticket_types = TicketTypeCreateUpdateSerializer(many=True, write_only=True)
+    ticket_types = TicketTypeCreateUpdateSerializer(
+        many=True,
+        write_only=True,
+    )
 
-    start_date = serializers.DateTimeField(input_formats=["iso-8601"])
+    start_date = serializers.DateTimeField(
+        input_formats=["iso-8601"],
+    )
 
-    end_date = serializers.DateTimeField(input_formats=["iso-8601"])
+    end_date = serializers.DateTimeField(
+        input_formats=["iso-8601"],
+    )
 
     class Meta:
         model = Event
@@ -138,6 +145,25 @@ class EventCreateUpdateSerializer(serializers.ModelSerializer):
             "ticket_types",
         ]
         read_only_fields = ["id", "slug"]
+
+    def validate_status(self, value):
+        request = self.context.get("request")
+
+        if not request or not request.user.is_authenticated:
+            return value
+
+        if request.user.role == "admin":
+            return value
+
+        if request.user.role == "organizer" and value not in [
+            "draft",
+            "pending",
+        ]:
+            raise serializers.ValidationError(
+                "Organizers can only set an event status to draft or pending."
+            )
+
+        return value
 
     def create(self, validated_data):
         ticket_types_data = validated_data.pop("ticket_types", [])
