@@ -16,6 +16,7 @@ import AuthGate from "./AuthGate";
 
 import {
     FiCalendar,
+    FiEye,
     FiCheckCircle,
     FiClock,
     FiEdit,
@@ -154,15 +155,15 @@ function MyEvents() {
     return (
         <div className="flex min-h-screen flex-col bg-background text-foreground">
             <Header />
-            <div className="mx-auto w-7xl space-y-8 mt-5">
+            <div className="mx-auto w-full max-w-7xl space-y-8 mt-5 px-4 sm:px-6 lg:px-8">
                 <PageHeader
                     title="My Events"
                     description="Manage, monitor and update your events."
                 />
 
-                <main className="mx-auto max-w-7xl px-4 py-10">
-                    <div className="mb-8 rounded-2xl border bg-white p-5 shadow-sm">
-                        <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+                <main className="mx-auto w-full max-w-7xl pb-10 sm:px-0">
+                    <div className="mb-8 rounded-2xl border bg-white p-5 shadow-sm sm:p-6">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                             <div className="shrink-0">
                                 <h2 className="text-3xl font-bold">
                                     Event Dashboard
@@ -173,7 +174,7 @@ function MyEvents() {
                                 </p>
                             </div>
 
-                            <div className="grid w-full gap-3 md:grid-cols-2 xl:max-w-4xl xl:grid-cols-[minmax(240px,1fr)_190px_210px_auto]">
+                            <div className="grid w-full gap-3 md:grid-cols-2 lg:max-w-4xl lg:grid-cols-[minmax(240px,1fr)_190px_210px_auto]">
                                 <form
                                     onSubmit={handleSearch}
                                     className="relative"
@@ -186,7 +187,7 @@ function MyEvents() {
                                             setSearchInput(event.target.value)
                                         }
                                         placeholder="Search events..."
-                                        className="h-11 w-full rounded-xl border bg-white pl-10 pr-20 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                                        className="h-11 w-full rounded-xl border bg-white pl-10 pr-24 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
                                     />
 
                                     <button
@@ -244,7 +245,7 @@ function MyEvents() {
                         </div>
                     </div>
 
-                    <div className="mb-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="mb-10 grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
                         <div className="rounded-2xl border bg-white p-6 shadow-sm">
                             <p className="text-sm text-muted-foreground">
                                 Total Events
@@ -329,7 +330,7 @@ function MyEvents() {
 
                                                 {/* Image */}
 
-                                                <div className="relative xl:w-96">
+                                                <div className="relative w-full xl:w-96">
                                                     <img
                                                         src={
                                                             event.cover_image ??
@@ -446,40 +447,102 @@ function MyEvents() {
                                                     </div>
 
                                                     {/* Footer */}
-                                                    <div className="mt-8 flex flex-col gap-4 border-t pt-6 md:flex-row md:items-center md:justify-between">
-                                                        <div className="flex flex-wrap gap-6 text-sm">
-                                                            <div>
-                                                                <p className="text-muted-foreground">
+                                                    <div className="mt-8 flex flex-col gap-6 border-t pt-6 lg:flex-row lg:items-center lg:justify-between">
+                                                        <div className="flex flex-wrap gap-4 w-full sm:w-auto">
+                                                            <div className="min-w-32 w-full rounded-xl border bg-slate-50 px-4 py-3 sm:w-auto">
+                                                                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                                                                     Ticket Types
                                                                 </p>
 
-                                                                <p className="font-semibold">
+                                                                <p className="mt-1 text-2xl font-bold">
                                                                     {event.ticket_types.length}
                                                                 </p>
                                                             </div>
 
-                                                            <div>
-                                                                <p className="text-muted-foreground">
+                                                            <div className="min-w-32 w-full rounded-xl border bg-slate-50 px-4 py-3 sm:w-auto">
+                                                                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                                                                     Status
                                                                 </p>
 
-                                                                <p className="font-semibold capitalize">
-                                                                    {event.status}
-                                                                </p>
+                                                                <div className="mt-2">
+                                                                    <span
+                                                                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${badge.className}`}
+                                                                    >
+                                                                        {badge.icon}
+                                                                        <span className="ml-2 capitalize">
+                                                                            {event.status}
+                                                                        </span>
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
 
-                                                        <Button
-                                                            size="lg"
-                                                            onClick={() =>
-                                                                navigate(
-                                                                    `/organizer/edit-event/${event.id}`
-                                                                )
-                                                            }
-                                                        >
-                                                            <FiEdit className="mr-2" />
-                                                            Edit Event
-                                                        </Button>
+                                                        <div className="flex flex-col gap-3 sm:flex-row">
+                                                            <Button
+                                                                variant="outline"
+                                                                size="lg"
+                                                                onClick={() =>
+                                                                    navigate(`/organizer/events/preview/${event.id}`)
+                                                                }
+                                                            >
+                                                                <FiEye className="mr-2" />
+                                                                Preview
+                                                            </Button>
+
+                                                            {event.status === "draft" ? (
+                                                                <Button
+                                                                    size="lg"
+                                                                    onClick={() =>
+                                                                        navigate(`/organizer/edit-event/${event.id}`)
+                                                                    }
+                                                                >
+                                                                    <FiEdit className="mr-2" />
+                                                                    Edit Event
+                                                                </Button>
+                                                            ) : event.status === "pending" ? (
+                                                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                                                    <p className="font-semibold">
+                                                                        Review in progress
+                                                                    </p>
+
+                                                                    <p className="mt-1">
+                                                                        Please wait while our administrators review and approve
+                                                                        your event.
+                                                                    </p>
+                                                                </div>
+                                                            ) : event.status === "published" ? (
+                                                                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                                                                    <p className="font-semibold">
+                                                                        Your event is live 🎉
+                                                                    </p>
+
+                                                                    <p className="mt-1">
+                                                                        Your event has been approved and is now visible to
+                                                                        everyone.
+                                                                    </p>
+                                                                </div>
+                                                            ) : event.status === "cancelled" ? (
+                                                                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                                                                    <p className="font-semibold">
+                                                                        Event cancelled
+                                                                    </p>
+
+                                                                    <p className="mt-1">
+                                                                        This event has been cancelled and is no longer available.
+                                                                    </p>
+                                                                </div>
+                                                            ) : event.status === "completed" ? (
+                                                                <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                                                                    <p className="font-semibold">
+                                                                        Event completed
+                                                                    </p>
+
+                                                                    <p className="mt-1">
+                                                                        This event has finished successfully.
+                                                                    </p>
+                                                                </div>
+                                                            ) : null}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

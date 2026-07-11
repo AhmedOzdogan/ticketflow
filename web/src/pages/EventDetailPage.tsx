@@ -10,14 +10,18 @@ import {
     FiInfo,
     FiArrowRight,
 } from 'react-icons/fi';
-
+import { toast } from 'sonner';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { Loading } from '../components/ui/Loading';
 import { Button } from '../components/ui/Button';
-
-import type { EventDetail } from '../types/events';
-import { getEventDetails } from '../api/eventApi';
+import { getApiErrorMessage } from '../utils/getApiErrorMessages';
+import type { EventListPublicItem, EventListItem } from '../types/events';
+import {
+    getEventDetails,
+    getManageEventDetails,
+    editEvent
+} from "../api/eventApi";
 
 type InfoCardProps = {
     title: string;
@@ -61,9 +65,12 @@ const FeaturesList = () => {
 };
 
 const EventDetailPage = () => {
-    const { slug } = useParams();
+    const { slug, id } = useParams();
+    const isPreview = Boolean(id);
     const navigate = useNavigate();
-    const [event, setEvent] = useState<EventDetail | null>(null);
+    const [event, setEvent] =
+        useState<EventListItem | EventListPublicItem | null>(null);
+
     const [loading, setLoading] = useState(true);
 
     const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -75,15 +82,31 @@ const EventDetailPage = () => {
             return { ...prev, [ticketId]: next };
         });
     };
+    const handleRequestPublish = async () => {
+        if (!id) return;
+
+        try {
+            const formData = new FormData();
+            formData.append("status", "pending");
+
+            await editEvent(id, formData);
+
+            toast.success("Your event has been submitted for review.");
+
+            navigate("/organizer/events");
+        } catch (error) {
+            toast.error(getApiErrorMessage(error));
+        }
+    };
 
     const { totalTickets, totalPrice } = useMemo(() => {
         const totalTickets = event
-            ? event.ticket_types.reduce((sum, t) => sum + (quantities[t.id] ?? 0), 0)
+            ? event.ticket_types.reduce((sum, t) => sum + (quantities[t.name] ?? 0), 0)
             : 0;
 
         const totalPrice = event
             ? event.ticket_types.reduce(
-                (sum, t) => sum + (quantities[t.id] ?? 0) * Number(t.price),
+                (sum, t) => sum + (quantities[t.name] ?? 0) * Number(t.price),
                 0,
             )
             : 0;
@@ -92,7 +115,7 @@ const EventDetailPage = () => {
     }, [event, quantities]);
 
     React.useEffect(() => {
-        if (!slug) {
+        if (!slug && !id) {
             setLoading(false);
             return;
         }
@@ -104,7 +127,9 @@ const EventDetailPage = () => {
 
             try {
                 const [data] = await Promise.all([
-                    getEventDetails(slug as string),
+                    id
+                        ? getManageEventDetails(id)
+                        : getEventDetails(slug!),
                     new Promise((resolve) => setTimeout(resolve, 1000)),
                 ]);
 
@@ -125,7 +150,7 @@ const EventDetailPage = () => {
         return () => {
             mounted = false;
         };
-    }, [slug]);
+    }, [slug, id]);
 
     if (loading) {
         return (
@@ -152,10 +177,156 @@ const EventDetailPage = () => {
         );
     }
 
+    const previewEvent = isPreview
+
+        ? (event as EventListItem)
+
+        : null;
+
     return (
         <>
             <Header />
+            {isPreview && previewEvent && (
+                <>
+                    {previewEvent.status === "draft" && (
+                        <section className="border-b border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50">
+                            <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:flex-row lg:items-center lg:justify-between">
+                                <div className="max-w-3xl">
+                                    <div className="mb-3 inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-amber-800">
+                                        Organizer Preview
+                                    </div>
 
+                                    <h2 className="text-2xl font-bold text-slate-900">
+                                        Your event is currently in preview mode.
+                                    </h2>
+
+                                    <p className="mt-3 text-base leading-7 text-slate-700">
+                                        This is how your event will appear to visitors after
+                                        it has been approved. Once you click
+                                        <span className="font-semibold">
+                                            {" "}Request Publication
+                                        </span>
+                                        , our administrators will review your event and make
+                                        any necessary improvements before publication.
+                                    </p>
+
+                                    <p className="mt-3 text-sm font-medium text-amber-800">
+                                        After submitting your request, you will no longer be
+                                        able to edit this event while it is under review.
+                                    </p>
+                                </div>
+
+                                <div className="flex shrink-0">
+                                    <Button
+                                        size="lg"
+                                        className="px-8"
+                                        onClick={handleRequestPublish}
+                                    >
+                                        Request Publication
+                                    </Button>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    {previewEvent.status === "pending" && (
+                        <section className="border-b border-blue-300 bg-gradient-to-r from-blue-50 to-cyan-50">
+                            <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 lg:flex-row lg:items-center lg:justify-between">
+                                <div className="max-w-3xl">
+                                    <div className="mb-3 inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-blue-800">
+                                        Under Review
+                                    </div>
+
+                                    <h2 className="text-2xl font-bold text-slate-900">
+                                        Your event is being reviewed.
+                                    </h2>
+
+                                    <p className="mt-3 text-base leading-7 text-slate-700">
+                                        Your publication request has been sent successfully.
+                                        Our administrators are currently reviewing the event
+                                        details and checking that everything is ready for
+                                        publication.
+                                    </p>
+
+                                    <p className="mt-3 text-sm font-medium text-blue-800">
+                                        You cannot edit this event while it is under review.
+                                        Please wait for our administrators to complete the
+                                        approval process.
+                                    </p>
+                                </div>
+
+                                <div className="shrink-0 rounded-xl border border-blue-200 bg-white/70 px-6 py-4 text-sm text-blue-800">
+                                    <p className="font-semibold">
+                                        Review in progress
+                                    </p>
+
+                                    <p className="mt-1">
+                                        No action is required from you.
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    {previewEvent.status === "published" && (
+                        <section className="border-b border-green-300 bg-gradient-to-r from-green-50 to-emerald-50">
+                            <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-8 lg:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                    <div className="mb-3 inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-green-800">
+                                        Published
+                                    </div>
+
+                                    <h2 className="text-2xl font-bold text-slate-900">
+                                        Your event is live.
+                                    </h2>
+
+                                    <p className="mt-3 text-base text-slate-700">
+                                        Your event has been approved and is now visible to
+                                        visitors.
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    {previewEvent.status === "cancelled" && (
+                        <section className="border-b border-red-300 bg-gradient-to-r from-red-50 to-rose-50">
+                            <div className="mx-auto max-w-7xl px-6 py-8">
+                                <div className="mb-3 inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-red-800">
+                                    Cancelled
+                                </div>
+
+                                <h2 className="text-2xl font-bold text-slate-900">
+                                    This event has been cancelled.
+                                </h2>
+
+                                <p className="mt-3 text-base text-slate-700">
+                                    The event is no longer available to visitors.
+                                </p>
+                            </div>
+                        </section>
+                    )}
+
+                    {previewEvent.status === "completed" && (
+                        <section className="border-b border-slate-300 bg-gradient-to-r from-slate-50 to-gray-100">
+                            <div className="mx-auto max-w-7xl px-6 py-8">
+                                <div className="mb-3 inline-flex items-center rounded-full bg-slate-200 px-3 py-1 text-xs font-bold uppercase tracking-wider text-slate-800">
+                                    Completed
+                                </div>
+
+                                <h2 className="text-2xl font-bold text-slate-900">
+                                    This event has been completed.
+                                </h2>
+
+                                <p className="mt-3 text-base text-slate-700">
+                                    The event has finished and is no longer accepting new
+                                    bookings.
+                                </p>
+                            </div>
+                        </section>
+                    )}
+                </>
+            )}
             {/* Hero Section */}
             <section
                 className="relative h-[50vh] min-h-[420px] sm:h-[60vh] lg:h-[50vh] lg:min-h-[500px] w-full overflow-hidden"
@@ -245,7 +416,7 @@ const EventDetailPage = () => {
                                     }
                                     return (
                                         <div
-                                            key={ticket.id}
+                                            key={ticket.name}
                                             className="flex flex-col gap-4 p-4 sm:p-5 transition-colors hover:bg-background/60 md:flex-row md:items-center"
                                         >
                                             <div className="flex-1">
@@ -274,21 +445,21 @@ const EventDetailPage = () => {
                                                     <button
                                                         type="button"
                                                         className="flex h-10 w-10 items-center justify-center text-lg font-bold transition hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        onClick={() => updateQuantity(ticket.id, -1, ticket.remaining_quantity)}
-                                                        disabled={(quantities[ticket.id] ?? 0) === 0}
+                                                        onClick={() => updateQuantity(ticket.name, -1, ticket.remaining_quantity)}
+                                                        disabled={(quantities[ticket.name] ?? 0) === 0}
                                                     >
                                                         −
                                                     </button>
 
                                                     <span className="flex h-10 w-12 items-center justify-center border-x border-border text-sm font-bold">
-                                                        {quantities[ticket.id] ?? 0}
+                                                        {quantities[ticket.name] ?? 0}
                                                     </span>
 
                                                     <button
                                                         type="button"
                                                         className="flex h-10 w-10 items-center justify-center text-lg font-bold transition hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        onClick={() => updateQuantity(ticket.id, 1, ticket.remaining_quantity)}
-                                                        disabled={(quantities[ticket.id] ?? 0) === ticket.remaining_quantity}
+                                                        onClick={() => updateQuantity(ticket.name, 1, ticket.remaining_quantity)}
+                                                        disabled={(quantities[ticket.name] ?? 0) === ticket.remaining_quantity}
                                                     >
                                                         +
                                                     </button>
@@ -326,10 +497,18 @@ const EventDetailPage = () => {
                                     Contact our support team.
                                 </button>
                             </div>
-                            <Button className="flex w-full items-center justify-center gap-2 py-3 text-base font-semibold">
-                                Proceed to Checkout
-                                <FiArrowRight size={18} />
-                            </Button>
+                            {isPreview ? (
+                                <Button className="flex w-full items-center justify-center gap-2 py-3 text-base font-semibold" disabled>
+                                    Proceed to Checkout
+                                    <FiArrowRight size={18} />
+                                </Button>
+                            ) : (
+
+                                <Button className="flex w-full items-center justify-center gap-2 py-3 text-base font-semibold">
+                                    Proceed to Checkout
+                                    <FiArrowRight size={18} />
+                                </Button>)
+                            }
                         </div>
                     </div>
                 </div>
