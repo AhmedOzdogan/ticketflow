@@ -677,13 +677,256 @@ There are currently no standalone Ticket Type endpoints.
 
 ### Orders
 
+Base path:
+
 ```txt
-POST /api/orders/
-GET  /api/orders/my-orders/
-GET  /api/orders/:id/
+/api/v1/orders/
+```
+
+### Order Endpoints
+
+| Method | Endpoint | Description | Authorization |
+| --- | --- | --- | --- |
+| POST | `/api/v1/orders/create/` | Create a new order | Authenticated User |
+| GET | `/api/v1/orders/` | Return orders based on the authenticated user's role | Authenticated User |
+| GET | `/api/v1/orders/<uuid:id>/` | Return a single order | Authenticated User |
+| GET | `/api/v1/orders/tickets/` | Return tickets based on the authenticated user's role | Authenticated User |
+| PATCH | `/api/v1/orders/tickets/<uuid:qr_code>/scan/` | Validate and check in a ticket | Approved Organizer or Admin |
+
+---
+
+### Authorization
+
+#### Order List
+
+```txt
+GET /api/v1/orders/
+```
+
+Returns orders depending on the authenticated user's role.
+
+- Buyers receive only their own orders.
+- Approved organizers receive orders for events they organize.
+- Admins receive every order.
+
+Conceptually:
+
+```python
+# Buyer
+Order.objects.filter(user=request.user)
+
+# Approved Organizer
+Order.objects.filter(event__organizer=request.user)
+
+# Admin
+Order.objects.all()
 ```
 
 ---
+
+#### Order Detail
+
+```txt
+GET /api/v1/orders/<uuid:id>/
+```
+
+Returns a single order.
+
+- Buyers may retrieve only their own orders.
+- Approved organizers may retrieve orders belonging to their own events.
+- Admins may retrieve any order.
+
+---
+
+#### Ticket List
+
+```txt
+GET /api/v1/orders/tickets/
+```
+
+Returns tickets depending on the authenticated user's role.
+
+- Buyers receive only their own tickets.
+- Approved organizers receive tickets for events they organize.
+- Admins receive every ticket.
+
+Conceptually:
+
+```python
+# Buyer
+Ticket.objects.filter(owner=request.user)
+
+# Approved Organizer
+Ticket.objects.filter(event__organizer=request.user)
+
+# Admin
+Ticket.objects.all()
+```
+
+---
+
+#### Ticket Check-in
+
+```txt
+PATCH /api/v1/orders/tickets/<uuid:qr_code>/scan/
+```
+
+Requires an authenticated **approved organizer** or **admin**.
+
+- The QR code is used to locate the ticket.
+- If the ticket is active, it is marked as `used`.
+- If the ticket has already been used, cancelled or refunded, the request is rejected.
+- Organizers may only check in tickets for their own events.
+- Admins may check in any ticket.
+
+---
+
+### Order Statuses
+
+```txt
+PENDING
+PROCESSING
+PAID
+FAILED
+CANCELLED
+EXPIRED
+REFUNDED
+```
+
+---
+
+### Ticket Statuses
+
+```txt
+ACTIVE
+USED
+CANCELLED
+REFUNDED
+```
+
+---
+
+### Create Order
+
+Example request body:
+
+```json
+{
+  "event": "550e8400-e29b-41d4-a716-446655440000",
+  "items": [
+    {
+      "ticket_type": "9e675a76-2454-4ebd-b4a2-d12d476ef755",
+      "quantity": 2
+    },
+    {
+      "ticket_type": "2b9d84fd-7d4d-4e96-9d46-71a7e07f2c52",
+      "quantity": 1
+    }
+  ]
+}
+```
+
+Notes:
+
+- The authenticated user is automatically assigned as the order owner.
+- The order starts with the `pending` status.
+- The total price is calculated automatically.
+- Ticket prices are copied into the order items.
+- Tickets are generated only after successful payment.
+
+---
+
+### Order Response
+
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "event_id": "550e8400-e29b-41d4-a716-446655440000",
+  "event_title": "Summer Music Festival",
+  "status": "pending",
+  "total_price": "149.97",
+  "currency": "EUR",
+  "items": [
+    {
+      "id": "d12d476e-f755-4ebd-b4a2-9e675a762454",
+      "ticket_type_id": "9e675a76-2454-4ebd-b4a2-d12d476ef755",
+      "ticket_type_name": "General Admission",
+      "quantity": 3,
+      "unit_price": "49.99",
+      "total_price": "149.97"
+    }
+  ],
+  "created_at": "2026-07-11T12:00:00Z",
+  "paid_at": null
+}
+```
+
+---
+
+### Ticket Response
+
+```json
+{
+  "id": "2bbf3e13-7c0e-4ef5-8f2c-df17b4f76d0b",
+  "owner_email": "buyer@example.com",
+  "event": "550e8400-e29b-41d4-a716-446655440000",
+  "ticket_type": "9e675a76-2454-4ebd-b4a2-d12d476ef755",
+  "status": "active",
+  "used_at": null,
+  "created_at": "2026-07-11T12:00:00Z"
+}
+```
+
+---
+
+### Order List Query Parameters
+
+The `GET /api/v1/orders/` endpoint supports:
+
+| Query Parameter | Description |
+| --- | --- |
+| `page` | Page number |
+| `page_size` | Number of results per page |
+| `search` | Search by event title or order status |
+| `status` | Filter by order status |
+| `event` | Filter by event |
+| `ordering` | Order by `created_at`, `paid_at` or `total_price` |
+
+Examples:
+
+```txt
+GET /api/v1/orders/?status=paid
+```
+
+```txt
+GET /api/v1/orders/?ordering=-created_at&page=1&page_size=10
+```
+
+---
+
+### Ticket List Query Parameters
+
+The `GET /api/v1/orders/tickets/` endpoint supports:
+
+| Query Parameter | Description |
+| --- | --- |
+| `page` | Page number |
+| `page_size` | Number of results per page |
+| `search` | Search by event title, owner email or ticket status |
+| `status` | Filter by ticket status |
+| `event` | Filter by event |
+| `ticket_type` | Filter by ticket type |
+| `ordering` | Order by `created_at` or `used_at` |
+
+Examples:
+
+```txt
+GET /api/v1/orders/tickets/?status=active
+```
+
+```txt
+GET /api/v1/orders/tickets/?ordering=-created_at
+```
 
 ## Environment Variables
 
