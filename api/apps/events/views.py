@@ -51,7 +51,7 @@ class EventListView(generics.ListAPIView):
     def get_queryset(self):
         return Event.objects.filter(
             status=Status.PUBLISHED,
-        ).select_related("organizer")
+        ).select_related("organizer").prefetch_related("ticket_types")
 
 
 class EventDetailView(generics.RetrieveAPIView):
@@ -64,7 +64,7 @@ class EventDetailView(generics.RetrieveAPIView):
     ).prefetch_related("ticket_types")
     lookup_field = "slug"
 
-class EventListView(generics.ListAPIView):
+class EventListManageView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsApprovedOrganizer | IsAdmin]
     serializer_class = EventDetailSerializer
     filter_backends = [
@@ -91,11 +91,11 @@ class EventListView(generics.ListAPIView):
 
     def get_queryset(self):
         if self.request.user.role == "admin":
-            return Event.objects.select_related("organizer")
+            return Event.objects.select_related("organizer").prefetch_related("ticket_types")
 
         return Event.objects.filter(
             organizer=self.request.user,
-        ).select_related("organizer")
+        ).select_related("organizer").prefetch_related("ticket_types")
 
 class EventCreateView(generics.CreateAPIView):
     permission_classes = [
