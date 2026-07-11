@@ -1,10 +1,10 @@
 import { FiArrowRight, FiCalendar, FiMapPin } from 'react-icons/fi';
-import type { EventListItem } from '../../types/events';
+import type { EventListPublicItem } from '../../types/events';
 import { Button } from './Button';
 import { useNavigate } from 'react-router-dom';
 
 type EventCardProps = {
-    event: EventListItem;
+    event: EventListPublicItem;
     variant?: 'default' | 'hero';
     layout?: 'compact' | 'horizontal';
 };

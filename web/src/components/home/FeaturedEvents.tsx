@@ -1,10 +1,10 @@
 import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
-import type { EventListItem } from '../../types/events';
+import type { EventListPublicItem } from '../../types/events';
 import { EventCard } from '../ui/EventCard';
 
 type FeaturedEventsProps = {
-    events: EventListItem[];
+    events: EventListPublicItem[];
     loading: boolean;
 };
 
@@ -37,7 +37,7 @@ export function FeaturedEvents({ events, loading }: FeaturedEventsProps) {
 
                 <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     {events.slice(0, 4).map((event) => (
-                        <EventCard key={event.id} event={event} />
+                        <EventCard key={event.slug} event={event} />
                     ))}
                 </div>
             </div>

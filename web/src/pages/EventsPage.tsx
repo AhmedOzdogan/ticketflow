@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiSearch, FiSliders } from 'react-icons/fi';
 import { getEvents } from '../api/eventApi';
-import type { EventListResponse } from '../types/events';
+import type { PublicEventListPaginatedResponse } from '../types/events';
 import EventCard from '../components/ui/EventCard';
 import { Loading } from '../components/ui/Loading';
 import { Button } from '../components/ui/Button';
@@ -18,7 +18,7 @@ const categories = [
 ];
 
 function Events() {
-    const [response, setResponse] = useState<EventListResponse | null>(null);
+    const [response, setResponse] = useState<PublicEventListPaginatedResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('All');
@@ -169,7 +169,7 @@ function Events() {
                             <div className={`space-y-6 transition-opacity duration-300 ${loading ? 'opacity-40' : 'opacity-100'}`}>
                                 {response?.results.map((event) => (
                                     <EventCard
-                                        key={event.id}
+                                        key={event.slug}
                                         event={event}
                                         layout="horizontal"
                                     />

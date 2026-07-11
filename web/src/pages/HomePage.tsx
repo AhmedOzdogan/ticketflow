@@ -6,17 +6,19 @@ import { StatsSection } from '../components/home/StatsSection';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
 import { useState, useEffect } from 'react';
-import type { EventListItem } from '../types/events';
+import type { PublicEventListPaginatedResponse, EventListPublicItem } from '../types/events';
 import { getEvents } from '../api/eventApi';
 
 function HomePage() {
-    const [events, setEvents] = useState<EventListItem[]>([]);
+    const [events, setEvents] = useState<EventListPublicItem[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         async function loadEvents() {
             try {
-                const data = await getEvents({ ordering: '-created_at' });
+                const data: PublicEventListPaginatedResponse = await getEvents({
+                    ordering: "-created_at",
+                });
                 setEvents(data.results);
             } catch (error) {
                 console.error('Failed to load events', error);

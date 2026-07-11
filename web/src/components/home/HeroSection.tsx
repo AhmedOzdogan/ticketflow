@@ -1,11 +1,11 @@
 import { FiArrowRight, FiCheckCircle } from 'react-icons/fi';
 import { Button } from '../ui/Button';
-import type { EventListItem } from '../../types/events';
+import type { EventListPublicItem } from '../../types/events';
 import { EventCard } from '../ui/EventCard';
 
 
 type HeroSectionProps = {
-    featuredEvent?: EventListItem;
+    featuredEvent?: EventListPublicItem;
     loading: boolean;
 };
 
