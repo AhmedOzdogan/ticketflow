@@ -35,12 +35,12 @@ export default function AdminLayout({
                 />
 
                 {toolbar && (
-                    <section className="border-b border-border bg-surface px-6 py-4">
+                    <section className="border-b border-border bg-surface px-4 py-4 sm:px-6">
                         {toolbar}
                     </section>
                 )}
 
-                <main className="p-6">{children}</main>
+                <main className="px-4 py-6 sm:px-6">{children}</main>
             </div>
         </div>
     );

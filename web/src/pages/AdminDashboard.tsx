@@ -275,16 +275,16 @@ const AdminDashboard: React.FC = () => {
                                             ? 'Search admins...'
                                             : 'Search users...'
                                 }
-                                className="h-13 w-full border border-border bg-surface px-3 text-sm font-medium text-foreground placeholder:text-black focus:border-muted focus:outline-none"
+                                className="h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm font-medium text-foreground placeholder:text-black focus:border-muted focus:outline-none"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                             <Button
                                 variant="ghost"
-                                className={`rounded-none border px-3 py-2 text-sm shadow-none ${filter === 'all'
+                                className={`w-full rounded-none border px-3 py-2 text-sm shadow-none sm:w-auto ${filter === 'all'
                                     ? 'border-muted bg-muted text-primary-foreground'
                                     : 'border-border bg-surface text-foreground hover:border-muted'
                                     }`}
@@ -296,7 +296,7 @@ const AdminDashboard: React.FC = () => {
                                 <>
                                     <Button
                                         variant="ghost"
-                                        className={`rounded-none border px-3 py-2 text-sm shadow-none ${filter === 'pending'
+                                        className={`w-full rounded-none border px-3 py-2 text-sm shadow-none sm:w-auto ${filter === 'pending'
                                             ? 'border-muted bg-muted text-primary-foreground'
                                             : 'border-border bg-surface text-foreground hover:border-muted'
                                             }`}
@@ -306,7 +306,7 @@ const AdminDashboard: React.FC = () => {
                                     </Button>
                                     <Button
                                         variant="ghost"
-                                        className={`rounded-none border px-3 py-2 text-sm shadow-none ${filter === 'approved'
+                                        className={`w-full rounded-none border px-3 py-2 text-sm shadow-none sm:w-auto ${filter === 'approved'
                                             ? 'border-muted bg-muted text-primary-foreground'
                                             : 'border-border bg-surface text-foreground hover:border-muted'
                                             }`}
@@ -316,7 +316,7 @@ const AdminDashboard: React.FC = () => {
                                     </Button>
                                     <Button
                                         variant="ghost"
-                                        className={`rounded-none border px-3 py-2 text-sm shadow-none ${filter === 'rejected'
+                                        className={`w-full rounded-none border px-3 py-2 text-sm shadow-none sm:w-auto ${filter === 'rejected'
                                             ? 'border-muted bg-muted text-primary-foreground'
                                             : 'border-border bg-surface text-foreground hover:border-muted'
                                             }`}
@@ -337,7 +337,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
             )}
             {stats && (
-                <div className="mb-6 grid gap-4 md:grid-cols-4">
+                <div className="mb-6 grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
                     <div className="border border-border bg-surface p-4">
                         <div className="text-sm text-muted-foreground"> Total Users</div>
                         <div className="mt-2 text-3xl font-bold">{stats.total_users}</div>
@@ -372,7 +372,7 @@ const AdminDashboard: React.FC = () => {
                 emptyDescription="There are no organizers matching the selected filter."
             >
                 <div className="overflow-x-auto">
-                    <table className="min-w-full border-collapse bg-white">
+                    <table className="min-w-full border-collapse bg-white text-sm">
                         <thead>
                             <tr>
                                 <th className="border border-muted bg-muted px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-white">#</th>
@@ -411,7 +411,7 @@ const AdminDashboard: React.FC = () => {
                                         className="border-b border-border odd:bg-surface even:bg-surface-muted"
                                     >
                                         <td className="border border-border px-4 py-3 align-top text-sm font-bold text-foreground">{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
-                                        <td className="border border-border px-4 py-3 align-top text-foreground">
+                                        <td className="border border-border px-4 py-3 align-top text-foreground whitespace-normal break-words">
                                             <div className="font-semibold text-foreground">{org.first_name} {org.last_name}</div>
                                         </td>
                                         {activeView === 'organizers' && (
@@ -421,10 +421,10 @@ const AdminDashboard: React.FC = () => {
                                                 </div>
                                             </td>
                                         )}
-                                        <td className="border border-border px-4 py-3 align-top">
+                                        <td className="border border-border px-4 py-3 align-top whitespace-normal break-words">
                                             <div className="break-all font-semibold text-foreground">{org.email}</div>
                                         </td>
-                                        <td className="border border-border px-4 py-3 align-top">
+                                        <td className="border border-border px-4 py-3 align-top whitespace-normal break-words">
                                             <div className="font-semibold text-foreground">{org.phone_number || 'N/A'}</div>
                                         </td>
                                         {activeView === 'organizers' && (
@@ -444,23 +444,23 @@ const AdminDashboard: React.FC = () => {
                                             </td>
                                         )}
                                         {activeView === 'organizers' && (
-                                            <td className="border border-border px-4 py-3 align-top text-foreground">
+                                            <td className="border border-border px-4 py-3 align-top text-foreground whitespace-normal break-words">
                                                 <div>
                                                     {org.organizer_profile?.organizer_details || <span className="text-muted-foreground">N/A</span>}
                                                 </div>
                                             </td>
                                         )}
                                         {activeView === 'organizers' && (
-                                            <td className="border border-border px-4 py-3 align-top">
+                                            <td className="border border-border px-4 py-3 align-top whitespace-normal break-words">
                                                 <StatusBadge status={org.organizer_approval_status} />
                                             </td>
                                         )}
                                         {activeView === 'organizers' && (
-                                            <td className="border border-border px-4 py-3 align-top min-w-[260px]">
+                                            <td className="border border-border px-4 py-3 align-top min-w-[240px]">
                                                 <div className="flex flex-col gap-2">
                                                     <select
                                                         id={`status-select-${org.id}`}
-                                                        className="h-9 w-full appearance-none border border-border bg-surface px-3 pr-10 text-sm font-semibold text-foreground focus:border-muted focus:outline-none"
+                                                        className="h-11 w-full appearance-none rounded-xl border border-border bg-surface px-3 pr-10 text-sm font-semibold text-foreground focus:border-muted focus:outline-none"
                                                         value={selectedStatus}
                                                         onChange={(event) => handleStatusChange(org.id, event.target.value as ApprovalStatus)}
                                                     >
@@ -498,12 +498,12 @@ const AdminDashboard: React.FC = () => {
                 </div>
             </AdminTable>
 
-            <div className="mt-4 flex items-center justify-between border border-border bg-surface px-4 py-3">
+            <div className="mt-4 flex flex-col gap-3 border border-border bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-muted-foreground">
                     Page {currentPage} of {totalPages} • {organizers.count} total users
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-2">
                     <Button
                         variant="ghost"
                         className="rounded-none border border-border"
