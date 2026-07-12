@@ -43,7 +43,7 @@ export function Button({
     const buttonClasses = `inline-flex items-center justify-center gap-2 rounded-full font-bold disabled:pointer-events-none disabled:opacity-50 ${variantClasses[variant]} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className}`;
 
     return (
-        <button type={type} className={buttonClasses} {...props}>
+        <button type={type} className={buttonClasses} {...props} disabled={disabled}>
             {children}
         </button>
     );
