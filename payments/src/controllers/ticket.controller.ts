@@ -7,12 +7,14 @@ export async function downloadTicket(
     req: Request<{ ticketId: string | string[] }>,
     res: Response,
 ) {
+    console.log(req.params.ticketId);
     const ticketId = Array.isArray(req.params.ticketId)
         ? req.params.ticketId[0]
         : req.params.ticketId;
 
     const pdf = await generateTicketPdf(ticketId);
 
+    console.log(pdf.length);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
         'Content-Disposition',
