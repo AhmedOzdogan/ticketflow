@@ -32,3 +32,13 @@ export async function completeOrder(
 
     return response.data;
 }
+
+export async function getTicket(
+    ticketId: string,
+) {
+    const response = await djangoApi.get(
+        `/orders/tickets/${ticketId}/download/`,
+    );
+
+    return response.data;
+}

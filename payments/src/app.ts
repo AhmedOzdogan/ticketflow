@@ -3,6 +3,7 @@ import cors from 'cors';
 
 import paymentRoutes from './routes/payment.routes';
 import webhookRoutes from './routes/webhook.routes';
+import ticketRoutes from './routes/ticket.routes';
 
 const app = express();
 
@@ -23,5 +24,6 @@ app.get('/', (_, res) => {
 
 app.use('/payment', paymentRoutes);
 app.use('/webhook', webhookRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 export default app;
