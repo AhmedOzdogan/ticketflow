@@ -8,6 +8,7 @@ from .serializers import (
     OrderSerializer,
     TicketSerializer,
     TicketScanSerializer,
+    TicketPdfSerializer,
 )
 from apps.users.permissions import IsAdmin, IsApprovedOrganizer
 from rest_framework.filters import SearchFilter
@@ -127,6 +128,19 @@ class TicketListView(generics.ListAPIView):
             return queryset.filter(event__organizer=user)
 
         return queryset.filter(owner=user)
+
+
+class TicketDownloadView(generics.RetrieveAPIView):
+    permission_classes = [IsPaymentService]
+    serializer_class = TicketPdfSerializer
+    lookup_field = "id"
+
+    queryset = Ticket.objects.select_related(
+        "event",
+        "ticket_type",
+        "owner",
+        "event__organizer",
+    )
 
 
 class TicketScanView(generics.UpdateAPIView):

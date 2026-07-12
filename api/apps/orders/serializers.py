@@ -253,19 +253,80 @@ class TicketSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    event_id = serializers.UUIDField(
+        source="event.id",
+        read_only=True,
+    )
+
+    event_title = serializers.CharField(
+        source="event.title",
+        read_only=True,
+    )
+
+    event_slug = serializers.CharField(
+        source="event.slug",
+        read_only=True,
+    )
+
+    event_cover_image = serializers.ImageField(
+        source="event.cover_image",
+        read_only=True,
+    )
+
+    ticket_type_id = serializers.UUIDField(
+        source="ticket_type.id",
+        read_only=True,
+    )
+
+    ticket_type_name = serializers.CharField(
+        source="ticket_type.name",
+        read_only=True,
+    )
+
     class Meta:
         model = Ticket
         fields = [
             "id",
             "owner_email",
-            "event",
-            "ticket_type",
+
+            "event_id",
+            "event_title",
+            "event_slug",
+            "event_cover_image",
+
+            "ticket_type_id",
+            "ticket_type_name",
+
             "qr_code",
             "status",
             "used_at",
             "created_at",
         ]
         read_only_fields = fields
+
+
+class TicketPdfSerializer(serializers.ModelSerializer):
+    event_title = serializers.CharField(source="event.title")
+    event_cover_image = serializers.ImageField(source="event.cover_image")
+    ticket_type_name = serializers.CharField(source="ticket_type.name")
+    owner_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Ticket
+        fields = [
+            "id",
+            "qr_code",
+            "status",
+            "created_at",
+            "event_title",
+            "event_cover_image",
+            "ticket_type_name",
+            "owner_name",
+        ]
+
+    def get_owner_name(self, obj):
+        return obj.owner.get_full_name() or obj.owner.email
+
 
 class TicketScanSerializer(serializers.ModelSerializer):
     owner_email = serializers.EmailField(
