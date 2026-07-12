@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.events',
     'apps.orders',
+    'apps.core'
     #'apps.payments',
     #'apps.tickets',
 ]
