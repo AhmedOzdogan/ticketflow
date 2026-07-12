@@ -25,6 +25,7 @@ import type {
     OrderStatus,
 } from '../types/order';
 import FilterChips from '../components/ui/FilterChips';
+import StatsGrid from '../components/ui/StatsGrid';
 
 type OrderStatusFilter = 'all' | OrderStatus;
 
@@ -243,104 +244,37 @@ export default function MyOrders() {
         statusFilter !== 'all' ||
         ordering !== '-created_at';
 
+    const stats = [
+        {
+            title: "Total Orders",
+            value: statistics.total,
+            icon: FiShoppingBag,
+        },
+        {
+            title: "Paid",
+            value: statistics.paid,
+            icon: FiCheckCircle,
+            color: "text-green-600",
+        },
+        {
+            title: "Pending",
+            value: statistics.pending,
+            icon: FiClock,
+            color: "text-yellow-600",
+        },
+        {
+            title: "Refunded",
+            value: statistics.refunded,
+            icon: FiCreditCard,
+            color: "text-blue-600",
+        },
+    ];
     return (
         <>
             <PageContainer
                 title="My Orders"
                 description="Review your purchases, payment statuses and tickets."
             >
-
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-                    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-muted">
-                                    Total Orders
-                                </p>
-
-                                <p className="mt-2 text-3xl font-black text-foreground">
-                                    {statistics.total}
-                                </p>
-                            </div>
-
-                            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                                <FiShoppingBag size={21} />
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-muted">
-                                    Paid
-                                </p>
-
-                                <p className="mt-2 text-3xl font-black text-foreground">
-                                    {statistics.paid}
-                                </p>
-                            </div>
-
-                            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-success/10 text-success">
-                                <FiCheckCircle size={21} />
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-muted">
-                                    Pending
-                                </p>
-
-                                <p className="mt-2 text-3xl font-black text-foreground">
-                                    {statistics.pending}
-                                </p>
-                            </div>
-
-                            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-warning/20 text-foreground">
-                                <FiClock size={21} />
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-muted">
-                                    Cancelled
-                                </p>
-
-                                <p className="mt-2 text-3xl font-black text-foreground">
-                                    {statistics.cancelled}
-                                </p>
-                            </div>
-
-                            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-danger/10 text-danger">
-                                <FiXCircle size={21} />
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-muted">
-                                    Refunded
-                                </p>
-
-                                <p className="mt-2 text-3xl font-black text-foreground">
-                                    {statistics.refunded}
-                                </p>
-                            </div>
-
-                            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                                <FiCreditCard size={21} />
-                            </span>
-                        </div>
-                    </div>
-                </div>
 
                 <PageDashboard
                     filters={
@@ -393,6 +327,8 @@ export default function MyOrders() {
                         </Button>
                     </div>
                 </PageDashboard>
+
+                <StatsGrid items={stats} />
 
                 <div className="mt-8">
                     {isLoading ? (

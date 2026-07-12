@@ -24,6 +24,7 @@ import {
 } from "react-icons/fi";
 import { Loading } from "../components/ui/Loading";
 import Pagination from "../components/ui/Pagination";
+import StatsGrid from "../components/ui/StatsGrid";
 
 const PAGE_SIZE = 10;
 
@@ -158,6 +159,32 @@ function MyEvents() {
         }
     }
 
+    const stats = [
+        {
+            title: "Total Events",
+            value: count,
+            icon: FiCalendar,
+        },
+        {
+            title: "Published",
+            value: publishedCount,
+            icon: FiCheckCircle,
+            color: "text-green-600",
+        },
+        {
+            title: "Draft",
+            value: draftCount,
+            icon: FiClock,
+            color: "text-yellow-600",
+        },
+        {
+            title: "Rejected",
+            value: rejectedCount,
+            icon: FiXCircle,
+            color: "text-red-600",
+        },
+    ];
+
     return (
         <>
             <PageContainer
@@ -212,47 +239,7 @@ function MyEvents() {
                         </div>
                     </PageDashboard>
 
-                    <div className="mb-10 grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-                        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-                            <p className="text-sm text-muted-foreground">
-                                Total Events
-                            </p>
-
-                            <p className="mt-3 text-4xl font-bold">
-                                {count}
-                            </p>
-                        </div>
-
-                        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-                            <p className="text-sm text-muted-foreground">
-                                Published on this page
-                            </p>
-
-                            <p className="mt-3 text-4xl font-bold text-green-600">
-                                {publishedCount}
-                            </p>
-                        </div>
-
-                        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-                            <p className="text-sm text-muted-foreground">
-                                Draft on this page
-                            </p>
-
-                            <p className="mt-3 text-4xl font-bold text-yellow-600">
-                                {draftCount}
-                            </p>
-                        </div>
-
-                        <div className="rounded-2xl border bg-white p-6 shadow-sm">
-                            <p className="text-sm text-muted-foreground">
-                                Rejected on this page
-                            </p>
-
-                            <p className="mt-3 text-4xl font-bold text-red-600">
-                                {rejectedCount}
-                            </p>
-                        </div>
-                    </div>
+                    <StatsGrid items={stats} />
 
                     {isLoading ? (
                         <div className="rounded-2xl border bg-white py-20 text-center shadow-sm">

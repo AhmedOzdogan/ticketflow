@@ -22,6 +22,8 @@ import type {
 } from '../types/order';
 import { Loading } from '../components/ui/Loading';
 import FilterChips from '../components/ui/FilterChips';
+import StatsGrid from '../components/ui/StatsGrid';
+import Pagination from '../components/ui/Pagination';
 
 type TicketStatusFilter = 'all' | TicketStatus;
 
@@ -264,67 +266,32 @@ export default function MyTickets() {
         }
     };
 
+    const stats = [
+        {
+            title: "Total Tickets",
+            value: statistics.total,
+            icon: TfiTicket,
+        },
+        {
+            title: "Active",
+            value: statistics.active,
+            icon: FiCheckCircle,
+            color: "text-green-600",
+        },
+        {
+            title: "Used",
+            value: statistics.used,
+            icon: FiClock,
+            color: "text-yellow-600",
+        },
+    ];
+
     return (
         <>
             <PageContainer
                 title="My Tickets"
                 description="Manage every ticket you've purchased.">
 
-                <div className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-muted">
-                                    Total Tickets
-                                </p>
-
-                                <p className="mt-2 text-3xl font-black text-foreground">
-                                    {statistics.total}
-                                </p>
-                            </div>
-
-                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                                <TfiTicket size={26} />
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-muted">
-                                    Active
-                                </p>
-
-                                <p className="mt-2 text-3xl font-black text-foreground">
-                                    {statistics.active}
-                                </p>
-                            </div>
-
-                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10 text-success">
-                                <FiCheckCircle size={26} />
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-muted">
-                                    Used
-                                </p>
-
-                                <p className="mt-2 text-3xl font-black text-foreground">
-                                    {statistics.used}
-                                </p>
-                            </div>
-
-                            <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-danger/10 text-danger">
-                                <FiClock size={26} />
-                            </span>
-                        </div>
-                    </div>
-                </div>
 
                 <PageDashboard
                     filters={
@@ -373,6 +340,8 @@ export default function MyTickets() {
                         </Button>
                     </div>
                 </PageDashboard>
+
+                <StatsGrid items={stats} columns={3} />
 
                 <div className="mt-8">
                     {loading ? (
@@ -503,73 +472,13 @@ export default function MyTickets() {
                     )}
                 </div>
 
-                {totalPages > 1 && (
-                    <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:flex-row">
-                        <p className="text-sm text-muted">
-                            Showing page{' '}
-                            <span className="font-bold text-foreground">
-                                {page}
-                            </span>{' '}
-                            of{' '}
-                            <span className="font-bold text-foreground">
-                                {totalPages}
-                            </span>
-                        </p>
 
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                disabled={page === 1}
-                                onClick={() =>
-                                    setPage((previous) =>
-                                        Math.max(previous - 1, 1),
-                                    )
-                                }
-                            >
-                                Previous
-                            </Button>
-
-                            {Array.from(
-                                { length: totalPages },
-                                (_, index) => index + 1,
-                            )
-                                .slice(
-                                    Math.max(0, page - 3),
-                                    Math.min(totalPages, page + 2),
-                                )
-                                .map((pageNumber) => (
-                                    <button
-                                        key={pageNumber}
-                                        type="button"
-                                        onClick={() =>
-                                            setPage(pageNumber)
-                                        }
-                                        className={`flex h-11 w-11 items-center justify-center rounded-xl border text-sm font-bold transition ${page === pageNumber
-                                            ? 'border-primary bg-primary text-primary-foreground'
-                                            : 'border-border bg-background hover:border-primary hover:bg-primary/5'
-                                            }`}
-                                    >
-                                        {pageNumber}
-                                    </button>
-                                ))}
-
-                            <Button
-                                variant="outline"
-                                disabled={page === totalPages}
-                                onClick={() =>
-                                    setPage((previous) =>
-                                        Math.min(
-                                            previous + 1,
-                                            totalPages,
-                                        ),
-                                    )
-                                }
-                            >
-                                Next
-                            </Button>
-                        </div>
-                    </div>
-                )}
+                <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    loading={loading}
+                    onPageChange={setPage}
+                />
             </PageContainer>
         </>
     );
