@@ -250,3 +250,5 @@ stripe.log
 # -----------------------------------------------------------------------------
 notes.local.md
 TODO.local.md
+payments/.gitignore
+
