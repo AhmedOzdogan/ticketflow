@@ -16,6 +16,8 @@ const MyEvents = lazy(() => import('./pages/MyEvents'));
 const CheckoutPage = lazy(() => import('./pages/Checkout'));
 const MyOrders = lazy(() => import('./pages/MyOrders'));
 const MyTickets = lazy(() => import('./pages/MyTickets'));
+const PaymentSuccessPage = lazy(() => import('./pages/PaymentSuccessPage'));
+const PaymentFailedPage = lazy(() => import('./pages/PaymentFailedPage'));
 
 import { Loading } from './components/ui/Loading';
 import { RequireRole } from './components/auth/RequireRole';
@@ -37,6 +39,8 @@ function App() {
           <Route path="/checkout/:slug" element={<CheckoutPage />} />
           <Route path="/my-orders" element={<MyOrders />} />
           <Route path="/my-tickets/:id" element={<MyTickets />} />
+          <Route path="/checkout/success" element={<PaymentSuccessPage />} />
+          <Route path="/checkout/failed" element={<PaymentFailedPage />} />
         </Route>
 
         {/* Organizers */}
