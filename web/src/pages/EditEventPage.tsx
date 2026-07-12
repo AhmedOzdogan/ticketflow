@@ -33,8 +33,6 @@ export default function EditEventsPage() {
         isSubmitting,
         submitError,
         updateField,
-        addTicketType,
-        removeTicketType,
         updateTicket,
     } = useEventForm({
         title: "",
@@ -177,8 +175,6 @@ export default function EditEventsPage() {
                                     cover_image: file,
                                 }))
                             }
-                            onAddTicketType={addTicketType}
-                            onRemoveTicketType={removeTicketType}
                             onTicketChange={updateTicket}
                         />
 

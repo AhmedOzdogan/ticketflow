@@ -7,7 +7,6 @@ import AuthGate from '../pages/AuthGate';
 import { useAuth } from '../context/AuthContext';
 import { EventSummary } from "../components/events/EventSummary";
 import {
-    emptyTicket,
     basicInformationFields,
     locationFields,
     dateTimeFields,
@@ -23,8 +22,6 @@ export default function CreateEventsPage() {
         isSubmitting,
         submitError,
         updateField,
-        addTicketType,
-        removeTicketType,
         updateTicket,
         handleCreateEvent,
     } = useEventForm({
@@ -38,7 +35,26 @@ export default function CreateEventsPage() {
         country: "",
         start_date: "",
         end_date: "",
-        ticket_types: [{ ...emptyTicket }],
+        ticket_types: [
+            {
+                name: 'Regular',
+                description: '',
+                price: '',
+                total_quantity: 1,
+            },
+            {
+                name: 'VIP',
+                description: '',
+                price: '',
+                total_quantity: 1,
+            },
+            {
+                name: 'Early Bird',
+                description: '',
+                price: '',
+                total_quantity: 1,
+            },
+        ],
     });
 
     if (!user) {
@@ -74,8 +90,6 @@ export default function CreateEventsPage() {
                                     cover_image: file,
                                 }))
                             }
-                            onAddTicketType={addTicketType}
-                            onRemoveTicketType={removeTicketType}
                             onTicketChange={updateTicket}
                         />
 

@@ -4,8 +4,6 @@ import {
     FiCalendar,
     FiImage,
     FiMapPin,
-    FiPlus,
-    FiTrash2,
     FiUpload,
 } from "react-icons/fi";
 import { useEffect, useState } from "react";
@@ -14,6 +12,7 @@ import { FormFields, type FormField } from "../ui/Form";
 import type { CreateEvent, TicketType } from "../../types/events";
 
 type TicketInput = Omit<TicketType, "id" | "remaining_quantity">;
+
 
 type EventFormProps = {
     formId: string;
@@ -28,8 +27,6 @@ type EventFormProps = {
         value: string | number | boolean,
     ) => void;
     onCoverImageChange: (file: File | null) => void;
-    onAddTicketType: () => void;
-    onRemoveTicketType: (index: number) => void;
     onTicketChange: (
         index: number,
         field: keyof TicketInput,
@@ -47,8 +44,6 @@ export function EventForm({
     onSubmit,
     onFieldChange,
     onCoverImageChange,
-    onAddTicketType,
-    onRemoveTicketType,
     onTicketChange,
 }: EventFormProps) {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -182,19 +177,13 @@ export function EventForm({
                         >
                             <div className="mb-4 flex items-center justify-between gap-3">
                                 <h3 className="font-bold text-[#0D2B5D] dark:text-white">
-                                    Ticket #{index + 1}
+                                    {index === 0
+                                        ? "Regular Ticket"
+                                        : index === 1
+                                            ? "VIP Ticket"
+                                            : "Early Bird Ticket"}
                                 </h3>
 
-                                {form.ticket_types.length > 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => onRemoveTicketType(index)}
-                                        className="inline-flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
-                                    >
-                                        <FiTrash2 />
-                                        Remove
-                                    </button>
-                                )}
                             </div>
 
                             <FormFields
@@ -207,15 +196,6 @@ export function EventForm({
                             />
                         </div>
                     ))}
-
-                    <button
-                        type="button"
-                        onClick={onAddTicketType}
-                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#0D2B5D] px-4 py-3 font-semibold text-[#0D2B5D] transition hover:bg-[#0D2B5D] hover:text-white dark:border-white/20 dark:text-white"
-                    >
-                        <FiPlus />
-                        Add Ticket Type
-                    </button>
                 </div>
             </section>
         </form>
