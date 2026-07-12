@@ -265,16 +265,17 @@ export default function MyTickets() {
     };
 
     return (
-        <>
+        <div className="flex min-h-screen flex-col bg-background text-foreground">
             <Header />
 
-            <main className="min-h-screen bg-background">
-                <PageHeader
-                    title="My Tickets"
-                    description="Manage every ticket you've purchased."
-                />
+            <main className="relative flex-1 overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
+                <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,var(--brand-yellow),transparent_28%),radial-gradient(circle_at_top_right,var(--brand-rose),transparent_26%)] opacity-20" />
+                <div className="mx-auto max-w-7xl space-y-8">
+                    <PageHeader
+                        title="My Tickets"
+                        description="Manage every ticket you've purchased."
+                    />
 
-                <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                     <div className="grid gap-4 md:grid-cols-3">
                         <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
                             <div className="flex items-center justify-between">
@@ -632,10 +633,10 @@ export default function MyTickets() {
                             </div>
                         </div>
                     )}
-                </section>
+                </div>
             </main>
 
             <Footer />
-        </>
+        </div>
     );
 }
