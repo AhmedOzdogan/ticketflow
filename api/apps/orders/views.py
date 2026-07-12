@@ -131,6 +131,7 @@ class TicketListView(generics.ListAPIView):
 
 
 class TicketDownloadView(generics.RetrieveAPIView):
+    authentication_classes = []
     permission_classes = [IsPaymentService]
     serializer_class = TicketPdfSerializer
     lookup_field = "id"
