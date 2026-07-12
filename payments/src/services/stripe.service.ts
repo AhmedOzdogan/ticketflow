@@ -41,7 +41,7 @@ export async function createStripeCheckoutSession(
             'http://localhost:5173/payment/success?session_id={CHECKOUT_SESSION_ID}',
 
         cancel_url:
-            'http://localhost:5173/payment/cancel',
+            'http://localhost:5173/payment/failed',
     });
 
     return {
