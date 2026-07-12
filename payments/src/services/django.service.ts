@@ -1,3 +1,4 @@
+import '../config/env';
 import axios from 'axios';
 
 const djangoApi = axios.create({
@@ -10,7 +11,7 @@ const djangoApi = axios.create({
 
 export async function getOrder(orderId: string) {
     const response = await djangoApi.get(
-        `/payments/orders/${orderId}/`,
+        `/orders/payments/${orderId}/`,
     );
 
     return response.data;
@@ -22,7 +23,7 @@ export async function completeOrder(
     stripePaymentIntentId: string,
 ) {
     const response = await djangoApi.patch(
-        `/payments/orders/${orderId}/complete/`,
+        `/orders/payments/${orderId}/complete/`,
         {
             stripe_checkout_session_id: stripeCheckoutSessionId,
             stripe_payment_intent_id: stripePaymentIntentId,

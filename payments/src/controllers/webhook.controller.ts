@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { completeOrder } from '../services/django.service';
 import stripe from '../config/stripe';
 import Stripe from 'stripe';
 
@@ -8,7 +9,7 @@ export const stripeWebhook = async (
 ) => {
     const signature = req.headers['stripe-signature'];
 
-    if (!signature) {
+    if (!signature || typeof signature !== 'string') {
         return res.status(400).send('Missing Stripe signature.');
     }
 
@@ -35,12 +36,17 @@ export const stripeWebhook = async (
                 session.metadata?.order_id,
             );
 
-            // TODO
-            // await completeOrder(
-            //     session.metadata?.order_id!,
-            //     session.id,
-            //     session.payment_intent as string,
-            // );
+            const orderId = session.metadata?.order_id;
+
+            if (!orderId) {
+                return res.status(400).send('Missing order ID.');
+            }
+
+            await completeOrder(
+                orderId,
+                session.id,
+                session.payment_intent as string,
+            );
 
             break;
         }
