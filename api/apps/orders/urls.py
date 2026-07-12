@@ -6,6 +6,9 @@ from .views import (
     OrderListView,
     TicketListView,
     TicketScanView,
+    PaymentOrderDetailView,
+    CompletePaymentView
+
 )
 
 app_name = "orders"
@@ -20,4 +23,6 @@ urlpatterns = [
         TicketScanView.as_view(),
         name="ticket-scan",
     ),
+    path("payments/<uuid:id>/", PaymentOrderDetailView.as_view(), name="order-detail-express"),
+    path("payments/<uuid:id>/complete/", CompletePaymentView.as_view(), name="order-complete-express"),
 ]

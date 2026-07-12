@@ -216,7 +216,6 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
         return order
 
-
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(
         many=True,

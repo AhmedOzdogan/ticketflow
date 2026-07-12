@@ -3,7 +3,7 @@ from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from .models import Order, Ticket
+from .models import Order, Ticket,TicketStatus
 from .serializers import (
     OrderCreateSerializer,
     OrderSerializer,
@@ -14,10 +14,14 @@ from apps.users.permissions import IsAdmin, IsApprovedOrganizer
 from rest_framework.filters import SearchFilter
 from .filters import (
     OrderFilter,
-    TicketFilter)
+    TicketFilter
+)
 from .paginations import DefaultPagination
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db import transaction
+from django.utils import timezone
+from .permissions import IsPaymentService
 
 class OrderCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -163,3 +167,68 @@ class TicketScanView(generics.UpdateAPIView):
         serializer.save()
 
         return Response(serializer.data)
+
+
+class PaymentOrderDetailView(generics.RetrieveAPIView):
+    permission_classes = [IsPaymentService]
+    serializer_class = OrderSerializer
+    lookup_field = "id"
+    queryset = (
+        Order.objects
+        .select_related("event", "user")
+        .prefetch_related("items__ticket_type")
+    )
+
+
+
+class CompletePaymentView(generics.UpdateAPIView):
+    permission_classes = [IsPaymentService]
+    lookup_field = "id"
+
+    queryset = (
+        Order.objects
+        .select_related("event", "user")
+        .prefetch_related("items__ticket_type")
+    )
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        order = self.get_object()
+
+        if order.status != "pending":
+            return Response(
+                {"detail": "Order has already been processed."},
+                status=400,
+            )
+
+        order.status = "paid"
+        order.paid_at = timezone.now()
+        order.stripe_checkout_session_id = request.data.get(
+            "stripe_checkout_session_id"
+        )
+        order.stripe_payment_intent_id = request.data.get(
+            "stripe_payment_intent_id"
+        )
+        order.save()
+
+        for item in order.items.select_related("ticket_type"):
+            ticket_type = item.ticket_type
+
+            ticket_type.remaining_quantity -= item.quantity
+            ticket_type.save()
+
+            for _ in range(item.quantity):
+                Ticket.objects.create(
+                    order_item=item,
+                    owner=order.user,
+                    event=order.event,
+                    ticket_type=ticket_type,
+                    status=TicketStatus.ACTIVE,
+                )
+
+        return Response(
+            {
+                "id": str(order.id),
+                "status": order.status,
+            }
+        )
