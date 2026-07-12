@@ -221,12 +221,19 @@ class OrderSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True,
     )
+
     event_id = serializers.UUIDField(
         source="event.id",
         read_only=True,
     )
+
     event_title = serializers.CharField(
         source="event.title",
+        read_only=True,
+    )
+
+    event_cover_image = serializers.ImageField(
+        source="event.cover_image",
         read_only=True,
     )
 
@@ -236,6 +243,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "id",
             "event_id",
             "event_title",
+            "event_cover_image",
             "status",
             "total_price",
             "currency",
