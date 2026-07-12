@@ -37,18 +37,14 @@ const CheckoutPage = () => {
             setLoading(false);
             return;
         }
-
         let mounted = true;
-
         async function loadEvent() {
             setLoading(true);
-
             try {
                 const [data] = await Promise.all([
                     getEventDetails(slug!),
                     new Promise((resolve) => setTimeout(resolve, 1000)),
                 ]);
-
                 if (mounted) {
                     setEvent(data);
 
@@ -69,7 +65,6 @@ const CheckoutPage = () => {
                 }
             }
         }
-
         loadEvent();
 
         return () => {

@@ -39,8 +39,8 @@ function App() {
           <Route path="/checkout/:slug" element={<CheckoutPage />} />
           <Route path="/my-orders" element={<MyOrders />} />
           <Route path="/my-tickets/:id" element={<MyTickets />} />
-          <Route path="/checkout/success" element={<PaymentSuccessPage />} />
-          <Route path="/checkout/failed" element={<PaymentFailedPage />} />
+          <Route path="/payment/success" element={<PaymentSuccessPage />} />
+          <Route path="/payment/failed" element={<PaymentFailedPage />} />
         </Route>
 
         {/* Organizers */}
