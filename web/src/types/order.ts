@@ -37,6 +37,7 @@ export interface Order {
     id: string;
     event_id: string;
     event_title: string;
+    event_cover_image: string;
     status: OrderStatus;
     total_price: string;
     currency: string;
@@ -49,8 +50,13 @@ export interface Order {
 export interface Ticket {
     id: string;
     owner_email: string;
-    event: string;
-    ticket_type: string;
+    event_id: string;
+    event_title: string;
+    event_slug: string;
+    event_cover_image: string;
+    ticket_type_id: string;
+    ticket_type_name: string;
+    qr_code: string;
     status: TicketStatus;
     used_at: string | null;
     created_at: string;

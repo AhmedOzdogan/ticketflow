@@ -79,8 +79,7 @@ export function AuthButtons() {
 
     if (user.role === 'buyer') {
         roleMenuItems.push(
-            { label: 'My Tickets', path: '/my-tickets', icon: <TfiTicket /> },
-            { label: 'My Events', path: '/my-events', icon: <FiGrid /> },
+            { label: 'My Orders', path: '/my-orders', icon: <TfiTicket /> },
         );
     }
 

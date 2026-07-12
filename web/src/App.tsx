@@ -13,6 +13,8 @@ import CreateEventsPage from './pages/CreateEventsPage';
 import EditEventPage from './pages/EditEventPage';
 import MyEvents from './pages/MyEvents';
 import CheckoutPage from './pages/Checkout';
+import MyOrders from './pages/MyOrders';
+import MyTickets from './pages/MyTickets';
 
 function App() {
   return (
@@ -29,7 +31,9 @@ function App() {
       <Route path="/organizer/edit-event/:slug" element={<EditEventPage />} />
       <Route path="/organizer/my-events" element={<MyEvents />} />
       <Route path="/organizer/events/preview/:id" element={<EventDetailPage />} />
-      <Route path="/checkout/:slug" element={<CheckoutPage />}
+      <Route path="/checkout/:slug" element={<CheckoutPage />} />
+      <Route path="/my-orders" element={<MyOrders />} />
+      <Route path="/my-tickets/:id" element={<MyTickets />}
       />
 
 

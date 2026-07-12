@@ -1,4 +1,5 @@
 import { api } from './client';
+import axios from 'axios';
 
 import type {
     CreateOrderRequest,
@@ -93,6 +94,19 @@ export async function scanTicket(
     const response = await api.patch<Ticket>(
         `/v1/orders/tickets/${qrCode}/scan/`,
         {},
+    );
+
+    return response.data;
+}
+
+export async function downloadTicket(
+    ticketId: string,
+): Promise<Blob> {
+    const response = await axios.get<Blob>(
+        `http://localhost:5001/api/tickets/${ticketId}/pdf`,
+        {
+            responseType: 'blob',
+        },
     );
 
     return response.data;
