@@ -19,7 +19,6 @@ export async function createOrder(
         '/v1/orders/create/',
         data,
     );
-
     return response.data;
 }
 
@@ -59,6 +58,14 @@ export async function getOrder(
     );
 
     return response.data;
+}
+
+export async function cancelOrder(
+    orderId: string,
+): Promise<void> {
+    await api.put(
+        `/v1/orders/${orderId}/cancel/`,
+    );
 }
 
 // Return tickets based on the authenticated user's role

@@ -14,7 +14,7 @@ import {
 } from 'react-icons/fi';
 import { toast } from 'sonner';
 
-import { getOrders } from '../api/orderApi';
+import { getOrders, cancelOrder } from '../api/orderApi';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -166,6 +166,32 @@ export default function MyOrders() {
         ordering,
     ]);
 
+    const handleCancelOrder = async (orderId: string) => {
+        try {
+            await cancelOrder(orderId);
+
+            toast.success('Order cancelled successfully.');
+
+            setOrdersData((current) => ({
+                ...current,
+                results: current.results.map((order) =>
+                    order.id === orderId
+                        ? {
+                            ...order,
+                            status: 'cancelled',
+                        }
+                        : order,
+                ),
+            }));
+        } catch (error) {
+            console.error('Failed to cancel order:', error);
+
+            toast.error(
+                'The order could not be cancelled. Please try again.',
+            );
+        }
+    };
+
     const orders = ordersData.results;
 
     const totalPages = Math.max(
@@ -214,16 +240,17 @@ export default function MyOrders() {
         ordering !== '-created_at';
 
     return (
-        <>
+        <div className="flex min-h-screen flex-col bg-background text-foreground">
             <Header />
 
-            <main className="min-h-screen bg-background">
-                <PageHeader
-                    title="My Orders"
-                    description="Review your purchases, payment statuses and tickets."
-                />
+            <main className="relative flex-1 overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
+                <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,var(--brand-yellow),transparent_28%),radial-gradient(circle_at_top_right,var(--brand-rose),transparent_26%)] opacity-20" />
+                <div className="mx-auto max-w-7xl space-y-8">
+                    <PageHeader
+                        title="My Orders"
+                        description="Review your purchases, payment statuses and tickets."
+                    />
 
-                <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                         <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
                             <div className="flex items-center justify-between">
@@ -657,26 +684,16 @@ export default function MyOrders() {
                                                                     Payment
                                                                 </Button>
 
-                                                                <Button variant="outline">
+                                                                <Button
+                                                                    variant="outline"
+                                                                    onClick={() =>
+                                                                        handleCancelOrder(order.id)
+                                                                    }>
                                                                     Cancel
                                                                     Order
                                                                 </Button>
                                                             </>
                                                         )}
-
-                                                        {(cancelled ||
-                                                            refunded) && (
-                                                                <Button
-                                                                    variant="outline"
-                                                                    onClick={() =>
-                                                                        navigate(
-                                                                            `/events/${order.event_id}`,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    View Event
-                                                                </Button>
-                                                            )}
                                                     </div>
                                                 </div>
                                             </div>
@@ -761,10 +778,10 @@ export default function MyOrders() {
                             </div>
                         </div>
                     )}
-                </section>
+                </div>
             </main>
 
             <Footer />
-        </>
+        </div>
     );
 }
