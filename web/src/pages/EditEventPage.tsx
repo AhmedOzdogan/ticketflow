@@ -6,8 +6,6 @@ import { getApiErrorMessage } from "../utils/getApiErrorMessages";
 import type { UpdateEvent } from "../types/events";
 import { useEventForm } from "../hooks/useEventForm";
 import { EventForm } from "../components/events/EventForm";
-import AuthGate from '../pages/AuthGate';
-import { useAuth } from '../context/AuthContext';
 import { EventSummary } from "../components/events/EventSummary";
 import PageContainer from "../components/layout/PageContainer";
 import { useNavigate } from "react-router-dom";
@@ -21,7 +19,6 @@ import {
 import { Loading } from "../components/ui/Loading";
 
 export default function EditEventsPage() {
-    const { user } = useAuth();
     const { slug } = useParams<{ slug: string }>();
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate()
@@ -95,13 +92,6 @@ export default function EditEventsPage() {
 
         loadEvent();
     }, [slug, setForm]);
-
-    if (!user) {
-        return <AuthGate />;
-    }
-    if (user.role !== 'admin' && user.role !== 'organizer') {
-        return <AuthGate variant="unauthorized" />;
-    }
 
     const handleUpdateEvent = async () => {
         if (!slug) return;

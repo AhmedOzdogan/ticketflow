@@ -5,7 +5,6 @@ import PageContainer from '../components/layout/PageContainer';
 import { SettingsCard } from "../components/ui/SettingsCard";
 import { formatDate, getStatusStyles, getStatusIcon } from '../utils/myProfileHelpers';
 import { CardHeader } from '../components/ui/CardHeader';
-import AuthGate from '../pages/AuthGate';
 import { Button } from '../components/ui/Button';
 import { FormFields, type FieldValue, type FormField } from '../components/ui/Form';
 import { useAuth } from '../context/AuthContext';
@@ -61,6 +60,8 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
 
 function MyProfile() {
     const { user, setUser } = useAuth();
+    if (!user) return;
+
     const [profileFormData, setProfileFormData] = useState<ProfileFormData>(initialProfileFormData);
     const [organizerFormData, setOrganizerFormData] = useState<OrganizerFormData>(initialOrganizerFormData);
     const [passwordFormData, setPasswordFormData] = useState<PasswordFormData>(initialPasswordFormData);
@@ -68,7 +69,6 @@ function MyProfile() {
     const [passwordLoading, setPasswordLoading] = useState(false);
 
     useEffect(() => {
-        if (!user) return;
 
         setProfileFormData({
             firstName: user.first_name ?? '',
@@ -284,12 +284,6 @@ function MyProfile() {
             setPasswordLoading(false);
         }
     };
-
-    if (!user) {
-        return (
-            <AuthGate />
-        );
-    }
 
     const organizerStatus = user.organizer_approval_status;
 

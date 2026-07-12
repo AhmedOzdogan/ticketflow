@@ -17,7 +17,6 @@ import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
-import AuthGate from './AuthGate';
 import { toast } from "sonner";
 import { createOrder } from '../api/orderApi';
 import { Loading } from '../components/ui/Loading';
@@ -183,13 +182,6 @@ const CheckoutPage = () => {
         );
 
     };
-
-    if (!user) {
-        return (
-            <AuthGate />
-        );
-    }
-
     if (!event) {
         return (
             <>

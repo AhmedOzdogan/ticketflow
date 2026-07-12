@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
 import { getMyEvents } from "../api/eventApi";
 import type { EventListItem } from "../types/events";
 import { getApiErrorMessage } from "../utils/getApiErrorMessages";
 import { Button } from "../components/ui/Button";
 import PageContainer from "../components/layout/PageContainer";
-
-import { useAuth } from "../context/AuthContext";
-import AuthGate from "./AuthGate";
 
 import {
     FiCalendar,
@@ -29,7 +25,6 @@ import { Loading } from "../components/ui/Loading";
 const PAGE_SIZE = 10;
 
 function MyEvents() {
-    const { user } = useAuth();
     const navigate = useNavigate();
 
     const [events, setEvents] = useState<EventListItem[]>([]);
@@ -140,14 +135,6 @@ function MyEvents() {
                         "border-blue-200 bg-blue-100 text-blue-700",
                 };
         }
-    }
-
-    if (!user) {
-        return <AuthGate />;
-    }
-
-    if (user.role !== "admin" && user.role !== "organizer") {
-        return <AuthGate variant="unauthorized" />;
     }
 
     return (

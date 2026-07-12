@@ -1,8 +1,6 @@
 import { useEventForm } from "../hooks/useEventForm";
 import PageContainer from "../components/layout/PageContainer"
 import { EventForm } from "../components/events/EventForm";
-import AuthGate from '../pages/AuthGate';
-import { useAuth } from '../context/AuthContext';
 import { EventSummary } from "../components/events/EventSummary";
 import {
     basicInformationFields,
@@ -12,7 +10,6 @@ import {
 } from "../data/eventFormFields";
 
 export default function CreateEventsPage() {
-    const { user } = useAuth();
 
     const {
         form,
@@ -54,13 +51,6 @@ export default function CreateEventsPage() {
             },
         ],
     });
-
-    if (!user) {
-        return <AuthGate />;
-    }
-    if (user.role !== 'admin' && user.role !== 'organizer') {
-        return <AuthGate variant="unauthorized" />;
-    }
 
     return (
         <>

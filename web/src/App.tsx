@@ -1,44 +1,79 @@
 import { Route, Routes } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 
-import EventsPage from './pages/EventsPage';
 import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import FeaturePreview from './pages/FeaturePreview';
-import NotFoundPage from './pages/404';
-import MyProfile from './pages/MyProfile';
-import AdminDashboard from './pages/AdminDashboard';
-import EventDetailPage from './pages/EventDetailPage';
-import CreateEventsPage from './pages/CreateEventsPage';
-import EditEventPage from './pages/EditEventPage';
-import MyEvents from './pages/MyEvents';
-import CheckoutPage from './pages/Checkout';
-import MyOrders from './pages/MyOrders';
-import MyTickets from './pages/MyTickets';
+const EventsPage = lazy(() => import('./pages/EventsPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const SignupPage = lazy(() => import('./pages/SignupPage'));
+const FeaturePreview = lazy(() => import('./pages/FeaturePreview'));
+const NotFoundPage = lazy(() => import('./pages/404'));
+const MyProfile = lazy(() => import('./pages/MyProfile'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const EventDetailPage = lazy(() => import('./pages/EventDetailPage'));
+const CreateEventsPage = lazy(() => import('./pages/CreateEventsPage'));
+const EditEventPage = lazy(() => import('./pages/EditEventPage'));
+const MyEvents = lazy(() => import('./pages/MyEvents'));
+const CheckoutPage = lazy(() => import('./pages/Checkout'));
+const MyOrders = lazy(() => import('./pages/MyOrders'));
+const MyTickets = lazy(() => import('./pages/MyTickets'));
+
+import { Loading } from './components/ui/Loading';
+import { RequireRole } from './components/auth/RequireRole';
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/events" element={<EventsPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/feature-preview" element={<FeaturePreview />} />
-      <Route path="/my-profile" element={<MyProfile />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      <Route path="/events/:slug" element={<EventDetailPage />} />
-      <Route path="/organizer/create-event/" element={<CreateEventsPage />} />
-      <Route path="/organizer/edit-event/:slug" element={<EditEventPage />} />
-      <Route path="/organizer/my-events" element={<MyEvents />} />
-      <Route path="/organizer/events/preview/:id" element={<EventDetailPage />} />
-      <Route path="/checkout/:slug" element={<CheckoutPage />} />
-      <Route path="/my-orders" element={<MyOrders />} />
-      <Route path="/my-tickets/:id" element={<MyTickets />}
-      />
+    <Suspense fallback={<Loading message="Loading page..." overlay />}>
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/events" element={<EventsPage />} />
+        <Route path="/events/:slug" element={<EventDetailPage />} />
 
+        {/* Authenticated users */}
+        <Route element={<RequireRole />}>
+          <Route path="/my-profile" element={<MyProfile />} />
+          <Route path="/checkout/:slug" element={<CheckoutPage />} />
+          <Route path="/my-orders" element={<MyOrders />} />
+          <Route path="/my-tickets/:id" element={<MyTickets />} />
+        </Route>
 
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+        {/* Organizers */}
+        <Route element={<RequireRole allowedRoles={['organizer']} />}>
+          <Route
+            path="/organizer/feature-preview"
+            element={<FeaturePreview />}
+          />
+          <Route
+            path="/organizer/create-event"
+            element={<CreateEventsPage />}
+          />
+          <Route
+            path="/organizer/edit-event/:slug"
+            element={<EditEventPage />}
+          />
+          <Route
+            path="/organizer/my-events"
+            element={<MyEvents />}
+          />
+          <Route
+            path="/organizer/events/preview/:id"
+            element={<EventDetailPage />}
+          />
+        </Route>
+
+        {/* Admin */}
+        <Route element={<RequireRole allowedRoles={['admin']} />}>
+          <Route
+            path="/admin-dashboard"
+            element={<AdminDashboard />}
+          />
+        </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Suspense>
   );
 }
 

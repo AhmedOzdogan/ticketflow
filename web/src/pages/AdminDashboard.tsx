@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getStats, getUsers, updateOrganizerStatus } from '../api/authApi';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
-import AuthGate from './AuthGate';
 import AdminLayout from '../components/admin/AdminLayout';
 import AdminToolbar from '../components/admin/AdminToolbar';
 import AdminTable from '../components/admin/AdminTable';
@@ -238,18 +237,12 @@ const AdminDashboard: React.FC = () => {
         }
     };
 
-    if (!user) {
-        return <AuthGate />;
-    }
-    if (user.role !== 'admin') {
-        return <AuthGate variant="unauthorized" />;
-    }
     return (
         <AdminLayout
             title="Admin Management"
             subtitle="Review and manage organizer users."
             activeMenu={activeView}
-            adminEmail={user.email}
+            adminEmail={user!.email}
             menuItems={adminMenu}
             toolbar={
                 <AdminToolbar
