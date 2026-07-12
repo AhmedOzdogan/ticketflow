@@ -1,13 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     FiCheckCircle,
     FiCalendar,
     FiMapPin,
     FiUsers,
-    FiTag,
-    FiShoppingCart,
-    FiInfo,
     FiArrowRight,
 } from 'react-icons/fi';
 import { toast } from 'sonner';
@@ -43,27 +40,6 @@ const InfoCard: React.FC<InfoCardProps> = ({ title, children }) => (
     </div>
 );
 
-const FeaturesList = () => {
-    const features = [
-        'Secure Stripe Checkout',
-        'Instant Digital Ticket',
-        'QR Code Entry',
-        'Mobile Friendly',
-    ];
-    return (
-        <div className="rounded-2xl border border-border bg-background p-4">
-            <ul className="space-y-3 text-muted">
-                {features.map((feature) => (
-                    <li key={feature} className="flex items-center">
-                        <FiCheckCircle className="text-primary mr-2" />
-                        {feature}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-};
-
 const EventDetailPage = () => {
     const { slug, id } = useParams();
     const isPreview = Boolean(id);
@@ -73,15 +49,6 @@ const EventDetailPage = () => {
 
     const [loading, setLoading] = useState(true);
 
-    const [quantities, setQuantities] = useState<Record<string, number>>({});
-
-    const updateQuantity = (ticketId: string, delta: number, max: number) => {
-        setQuantities((prev) => {
-            const current = prev[ticketId] ?? 0;
-            const next = Math.max(0, Math.min(max, current + delta));
-            return { ...prev, [ticketId]: next };
-        });
-    };
     const handleRequestPublish = async () => {
         if (!id) return;
 
@@ -98,23 +65,7 @@ const EventDetailPage = () => {
             toast.error(getApiErrorMessage(error));
         }
     };
-
-    const { totalTickets, totalPrice } = useMemo(() => {
-        const totalTickets = event
-            ? event.ticket_types.reduce((sum, t) => sum + (quantities[t.name] ?? 0), 0)
-            : 0;
-
-        const totalPrice = event
-            ? event.ticket_types.reduce(
-                (sum, t) => sum + (quantities[t.name] ?? 0) * Number(t.price),
-                0,
-            )
-            : 0;
-
-        return { totalTickets, totalPrice };
-    }, [event, quantities]);
-
-    React.useEffect(() => {
+    useEffect(() => {
         if (!slug && !id) {
             setLoading(false);
             return;
@@ -380,136 +331,159 @@ const EventDetailPage = () => {
                         </div>
                     </div>
 
-                    <div className="grid gap-0 rounded-[2rem] border border-border bg-background p-4 sm:p-6 lg:p-8 lg:grid-rows">
-                        {/* LEFT COLUMN */}
-                        <div>
-                            <h2 className="text-2xl lg:text-3xl font-black text-foreground">Choose your ticket</h2>
-                            <p className="mt-2 text-muted">Select the ticket that best suits you.</p>
-                            <div className="mt-6 divide-y divide-border rounded-2xl border border-border bg-surface">
-                                {event.ticket_types.map((ticket) => {
-                                    // Badge color for remaining
-                                    const isLow = ticket.remaining_quantity <= 50;
-                                    let badgeClass =
-                                        isLow
-                                            ? "bg-red-100 text-red-700"
-                                            : "bg-green-100 text-green-700";
-                                    // Label badge for ticket type
-                                    let typeBadge = null;
-                                    if (ticket.name === "Regular") {
-                                        typeBadge = (
-                                            <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary align-middle">
-                                                Most Popular
-                                            </span>
-                                        );
-                                    } else if (ticket.name === "VIP") {
-                                        typeBadge = (
-                                            <span className="ml-2 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-semibold text-yellow-700 align-middle">
-                                                Premium
-                                            </span>
-                                        );
-                                    } else if (ticket.name === "Early Bird") {
-                                        typeBadge = (
-                                            <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 align-middle">
-                                                Best Value
-                                            </span>
-                                        );
-                                    }
-                                    return (
-                                        <div
-                                            key={ticket.name}
-                                            className="flex flex-col gap-4 p-4 sm:p-5 transition-colors hover:bg-background/60 md:flex-row md:items-center"
-                                        >
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <FiTag className="text-primary" />
-                                                    <h3 className="text-lg sm:text-xl font-black">{ticket.name}</h3>
-                                                    {typeBadge}
-                                                </div>
-                                                <p className="text-sm text-muted">{ticket.description}</p>
-                                                <div className="mt-2 flex items-center gap-2">
-                                                    <span className={`inline-block rounded-full px-2 py-1 text-xs font-semibold ${badgeClass}`}>
-                                                        <FiInfo className="mr-1 inline" />
-                                                        Remaining: {ticket.remaining_quantity}
-                                                    </span>
-                                                </div>
-                                                <span className="mt-3 block text-xl sm:text-2xl font-black text-primary md:hidden">
-                                                    €{ticket.price}
-                                                </span>
-                                            </div>
-                                            {/* Price under description for mobile, on right for desktop */}
-                                            <div className="ml-auto flex items-center gap-6">
-                                                <span className="hidden text-2xl lg:text-3xl font-black text-primary md:block">
-                                                    €{ticket.price}
-                                                </span>
-                                                <div className="flex items-center overflow-hidden rounded-xl border border-border bg-background">
-                                                    <button
-                                                        type="button"
-                                                        className="flex h-10 w-10 items-center justify-center text-lg font-bold transition hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        onClick={() => updateQuantity(ticket.name, -1, ticket.remaining_quantity)}
-                                                        disabled={(quantities[ticket.name] ?? 0) === 0}
-                                                    >
-                                                        −
-                                                    </button>
+                    <div className="mt-8 grid gap-6 lg:grid-cols-3">
+                        {event.ticket_types.map((ticket) => {
+                            const isVip = ticket.name === "VIP";
+                            const isRegular = ticket.name === "Regular";
+                            const isEarlyBird = ticket.name === "Early Bird";
+                            const isSoldOut = ticket.remaining_quantity === 0;
+                            const isLowStock =
+                                ticket.remaining_quantity > 0 &&
+                                ticket.remaining_quantity <= 20;
 
-                                                    <span className="flex h-10 w-12 items-center justify-center border-x border-border text-sm font-bold">
-                                                        {quantities[ticket.name] ?? 0}
-                                                    </span>
+                            const cardStyle = isVip
+                                ? "border-secondary bg-gradient-to-br from-secondary/35 via-surface to-surface"
+                                : isRegular
+                                    ? "border-primary/40 bg-gradient-to-br from-primary/10 via-surface to-surface"
+                                    : isEarlyBird
+                                        ? "border-accent/40 bg-gradient-to-br from-accent/15 via-surface to-surface"
+                                        : "border-border bg-surface";
 
-                                                    <button
-                                                        type="button"
-                                                        className="flex h-10 w-10 items-center justify-center text-lg font-bold transition hover:bg-surface disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        onClick={() => updateQuantity(ticket.name, 1, ticket.remaining_quantity)}
-                                                        disabled={(quantities[ticket.name] ?? 0) === ticket.remaining_quantity}
-                                                    >
-                                                        +
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                        {/* RIGHT SIDEBAR */}
-                        <div className="self-start rounded-2xl border border-border bg-surface p-4 mt-10 sm:mt-3 sm:p-6 lg:sticky lg:top-28">
-                            <h3 className="mb-2 flex items-center gap-2 text-xl font-black text-foreground">
-                                <FiShoppingCart className="text-primary" />
-                                <span>Ticket Summary</span>
-                            </h3>
-                            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-muted">Selected Tickets</p>
-                                <p className="mt-1 text-lg font-semibold text-foreground">{totalTickets} ticket{totalTickets !== 1 ? 's' : ''}</p>
-                                <p className="mt-3 text-3xl lg:text-4xl font-black text-primary">€{totalPrice.toFixed(2)}</p>
-                            </div>
-                            <hr className="my-4 border-border" />
-                            <FeaturesList />
-                            <hr className="my-4 border-border" />
-                            <div className="mb-4 rounded-lg border border-border bg-background p-4 text-sm text-muted">
-                                <div className="flex items-center gap-2 font-semibold text-foreground mb-1">
-                                    <FiInfo className="mt-0.5 text-primary" />
-                                    Need help?
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/feature-preview')}
-                                    className="mt-1 text-sm font-semibold text-primary transition hover:underline"
+                            const badge = isVip
+                                ? "Premium"
+                                : isRegular
+                                    ? "Most Popular"
+                                    : isEarlyBird
+                                        ? "Best Value"
+                                        : "Ticket";
+
+                            const badgeStyle = isVip
+                                ? "bg-secondary text-secondary-foreground"
+                                : isRegular
+                                    ? "bg-primary text-primary-foreground"
+                                    : isEarlyBird
+                                        ? "bg-accent text-accent-foreground"
+                                        : "bg-surface-muted text-foreground";
+
+                            return (
+                                <div
+                                    key={ticket.id ?? ticket.name}
+                                    className={`group relative flex flex-col overflow-hidden rounded-[var(--radius-xl)] border p-6 shadow-sm transition-all duration-300 sm:p-8 ${isSoldOut
+                                        ? "cursor-not-allowed opacity-60"
+                                        : "hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-black/10"
+                                        } ${cardStyle}`}
                                 >
-                                    Contact our support team.
-                                </button>
-                            </div>
-                            {isPreview ? (
-                                <Button className="flex w-full items-center justify-center gap-2 py-3 text-base font-semibold" disabled>
-                                    Proceed to Checkout
-                                    <FiArrowRight size={18} />
-                                </Button>
-                            ) : (
+                                    {isRegular && (
+                                        <div className="absolute right-0 top-0 rounded-bl-2xl bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wide text-primary-foreground">
+                                            Recommended
+                                        </div>
+                                    )}
 
-                                <Button className="flex w-full items-center justify-center gap-2 py-3 text-base font-semibold">
-                                    Proceed to Checkout
-                                    <FiArrowRight size={18} />
-                                </Button>)
-                            }
-                        </div>
+                                    <div className="flex items-center justify-between gap-4">
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-bold ${badgeStyle}`}
+                                        >
+                                            {badge}
+                                        </span>
+
+                                        <span
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold ${isSoldOut
+                                                ? "bg-muted/15 text-muted"
+                                                : isLowStock
+                                                    ? "bg-danger/10 text-danger"
+                                                    : "bg-success/10 text-success"
+                                                }`}
+                                        >
+                                            {isSoldOut
+                                                ? "Sold out"
+                                                : isLowStock
+                                                    ? `Only ${ticket.remaining_quantity} left`
+                                                    : `${ticket.remaining_quantity} available`}
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-8">
+                                        <h3 className="text-3xl font-black text-foreground">
+                                            {ticket.name}
+                                        </h3>
+
+                                        <p className="mt-3 min-h-[72px] text-sm leading-6 text-muted sm:text-base">
+                                            {ticket.description}
+                                        </p>
+                                    </div>
+
+                                    <div className="mt-8 rounded-2xl border border-border bg-surface/80 p-5">
+                                        <div className="flex items-end gap-2">
+                                            <span className="text-4xl font-black text-primary sm:text-5xl">
+                                                €{ticket.price}
+                                            </span>
+
+                                            <span className="pb-1 text-sm font-medium text-muted">
+                                                per ticket
+                                            </span>
+                                        </div>
+
+                                        <p className="mt-2 text-xs font-medium text-muted">
+                                            Price includes 18% VAT
+                                        </p>
+                                    </div>
+
+                                    <div className="my-7 h-px bg-border" />
+
+                                    <ul className="space-y-3 text-sm text-muted">
+                                        <li className="flex items-center gap-3">
+                                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-success/10">
+                                                <FiCheckCircle className="text-success" />
+                                            </span>
+                                            Digital QR ticket
+                                        </li>
+
+                                        <li className="flex items-center gap-3">
+                                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-success/10">
+                                                <FiCheckCircle className="text-success" />
+                                            </span>
+                                            Instant confirmation
+                                        </li>
+
+                                        <li className="flex items-center gap-3">
+                                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-success/10">
+                                                <FiCheckCircle className="text-success" />
+                                            </span>
+                                            Secure Stripe checkout
+                                        </li>
+                                    </ul>
+
+                                    <div className="mt-auto pt-8">
+                                        <Button
+                                            className={`flex w-full items-center justify-center gap-2 ${isVip
+                                                ? "bg-secondary text-secondary-foreground hover:bg-secondary/90"
+                                                : isRegular
+                                                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                                    : "bg-accent text-accent-foreground hover:bg-accent/90"
+                                                }`}
+                                            disabled={isPreview || isSoldOut}
+                                            onClick={() =>
+                                                navigate(`/checkout/${slug}`, {
+                                                    state: {
+                                                        selectedTicketId: ticket.id,
+                                                    },
+                                                })
+                                            }
+                                        >
+                                            {isSoldOut
+                                                ? "Sold Out"
+                                                : isPreview
+                                                    ? "Preview Only"
+                                                    : `Buy ${ticket.name}`}
+
+                                            {!isSoldOut && !isPreview && (
+                                                <FiArrowRight size={18} />
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>

@@ -12,6 +12,7 @@ import EventDetailPage from './pages/EventDetailPage';
 import CreateEventsPage from './pages/CreateEventsPage';
 import EditEventPage from './pages/EditEventPage';
 import MyEvents from './pages/MyEvents';
+import CheckoutPage from './pages/Checkout';
 
 function App() {
   return (
@@ -27,7 +28,8 @@ function App() {
       <Route path="/organizer/create-event/" element={<CreateEventsPage />} />
       <Route path="/organizer/edit-event/:slug" element={<EditEventPage />} />
       <Route path="/organizer/my-events" element={<MyEvents />} />
-      <Route path="/organizer/events/preview/:id" element={<EventDetailPage />}
+      <Route path="/organizer/events/preview/:id" element={<EventDetailPage />} />
+      <Route path="/checkout/:slug" element={<CheckoutPage />}
       />
 
 

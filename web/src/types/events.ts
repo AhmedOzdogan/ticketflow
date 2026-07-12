@@ -6,7 +6,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface EventListItem {
-    id: string;
+    id?: string;
     title: string;
     slug: string;
     description: string;
@@ -27,7 +27,7 @@ export interface EventListItem {
 }
 
 export interface TicketType {
-    id: string;
+    id?: string;
     name: string;
     description: string;
     price: string;
@@ -35,11 +35,10 @@ export interface TicketType {
     remaining_quantity: number;
 }
 
-export type PublicTicketType = Omit<TicketType, "id" | "total_quantity">;
+export type PublicTicketType = Omit<TicketType, "total_quantity">;
 
 export type EventListPublicItem = Omit<
     EventListItem,
-    | "id"
     | "end_date"
     | "status"
     | "created_at"
