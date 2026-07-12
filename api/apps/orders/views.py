@@ -1,9 +1,8 @@
-from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from .models import Order, Ticket,TicketStatus
+from .models import Order, Ticket, TicketStatus, TicketType
 from .serializers import (
     OrderCreateSerializer,
     OrderSerializer,
@@ -170,6 +169,7 @@ class TicketScanView(generics.UpdateAPIView):
 
 
 class PaymentOrderDetailView(generics.RetrieveAPIView):
+    authentication_classes = []
     permission_classes = [IsPaymentService]
     serializer_class = OrderSerializer
     lookup_field = "id"
@@ -180,8 +180,8 @@ class PaymentOrderDetailView(generics.RetrieveAPIView):
     )
 
 
-
 class CompletePaymentView(generics.UpdateAPIView):
+    authentication_classes = []
     permission_classes = [IsPaymentService]
     lookup_field = "id"
 
@@ -195,10 +195,18 @@ class CompletePaymentView(generics.UpdateAPIView):
     def update(self, request, *args, **kwargs):
         order = self.get_object()
 
+        if order.status == "paid":
+            return Response(
+                {
+                    "id": str(order.id),
+                    "status": order.status,
+                }
+            )
+
         if order.status != "pending":
             return Response(
-                {"detail": "Order has already been processed."},
-                status=400,
+                {"detail": "Order cannot be processed."},
+                status=409,
             )
 
         order.status = "paid"
@@ -212,7 +220,9 @@ class CompletePaymentView(generics.UpdateAPIView):
         order.save()
 
         for item in order.items.select_related("ticket_type"):
-            ticket_type = item.ticket_type
+            ticket_type = TicketType.objects.select_for_update().get(
+                id=item.ticket_type.id
+            )
 
             ticket_type.remaining_quantity -= item.quantity
             ticket_type.save()
