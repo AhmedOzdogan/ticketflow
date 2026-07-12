@@ -20,12 +20,12 @@ class TicketTypeSerializer(serializers.ModelSerializer):
         fields = super().get_fields()
         request = self.context.get("request")
 
-        if (
-            not request
-            or not request.user.is_authenticated
-            or request.user.role not in ["organizer", "admin"]
-        ):
+        if not request or not request.user.is_authenticated:
             fields.pop("id", None)
+            fields.pop("total_quantity", None)
+            return fields
+
+        if request.user.role == "buyer":
             fields.pop("total_quantity", None)
 
         return fields
@@ -51,6 +51,7 @@ class EventListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = [
+            "id",
             "title",
             "slug",
             "description",
@@ -68,6 +69,16 @@ class EventListSerializer(serializers.ModelSerializer):
     def get_organizer_name(self, obj):
         full_name = f"{obj.organizer.first_name} {obj.organizer.last_name}".strip()
         return full_name or obj.organizer.email
+
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get("request")
+
+        if not request or not request.user.is_authenticated:
+            fields.pop("id", None)
+            
+        return fields
+
 
 
 class EventDetailSerializer(serializers.ModelSerializer):
@@ -99,17 +110,18 @@ class EventDetailSerializer(serializers.ModelSerializer):
     def get_organizer_name(self, obj):
         full_name = f"{obj.organizer.first_name} {obj.organizer.last_name}".strip()
         return full_name or obj.organizer.email
-    def get_fields(self):
-      fields = super().get_fields()
-      request = self.context.get("request")
 
-      if (
-            not request
-            or not request.user.is_authenticated
-            or request.user.role != "admin"
-        ):
-          fields["status"].read_only = True
-      return fields
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get("request")
+
+        if (
+                not request
+                or not request.user.is_authenticated
+                or request.user.role != "admin"
+            ):
+            fields["status"].read_only = True
+        return fields
 
 
 class EventCreateUpdateSerializer(serializers.ModelSerializer):
