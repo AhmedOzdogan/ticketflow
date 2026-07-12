@@ -5,11 +5,8 @@ import { toast } from "sonner";
 import { getMyEvents } from "../api/eventApi";
 import type { EventListItem } from "../types/events";
 import { getApiErrorMessage } from "../utils/getApiErrorMessages";
-
-import { Header } from "../components/layout/Header";
-import { Footer } from "../components/layout/Footer";
-import { PageHeader } from "../components/ui/PageHeader";
 import { Button } from "../components/ui/Button";
+import PageContainer from "../components/layout/PageContainer";
 
 import { useAuth } from "../context/AuthContext";
 import AuthGate from "./AuthGate";
@@ -153,13 +150,10 @@ function MyEvents() {
     }
 
     return (
-        <div className="flex min-h-screen flex-col bg-background text-foreground">
-            <Header />
-            <div className="mx-auto w-full max-w-7xl space-y-8 mt-5 px-4 sm:px-6 lg:px-8">
-                <PageHeader
-                    title="My Events"
-                    description="Manage, monitor and update your events."
-                />
+        <>
+            <PageContainer
+                title="My Events"
+                description="Manage, monitor and update your events.">
 
                 <main className="mx-auto w-full max-w-7xl pb-10 sm:px-0">
                     <div className="mb-8 rounded-2xl border bg-white p-5 shadow-sm sm:p-6">
@@ -609,9 +603,8 @@ function MyEvents() {
                         </>
                     )}
                 </main>
-            </div>
-            <Footer />
-        </div>
+            </PageContainer>
+        </>
     );
 }
 

@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FiBriefcase, FiCalendar, FiEye, FiEyeOff, FiLock, FiPhone, FiUser } from 'react-icons/fi';
 import { toast } from 'sonner';
-import { Footer } from '../components/layout/Footer';
-import { Header } from '../components/layout/Header';
-import { PageHeader } from '../components/ui/PageHeader';
+import PageContainer from '../components/layout/PageContainer';
 import { SettingsCard } from "../components/ui/SettingsCard";
 import { formatDate, getStatusStyles, getStatusIcon } from '../utils/myProfileHelpers';
 import { CardHeader } from '../components/ui/CardHeader';
@@ -296,146 +294,137 @@ function MyProfile() {
     const organizerStatus = user.organizer_approval_status;
 
     return (
-        <div className="flex min-h-screen flex-col bg-background text-foreground">
-            <Header />
+        <>
+            <PageContainer
+                title="My Profile"
+                description="Manage your TicketFlow account details and security."
+                role={user.role}
+                organizerStatus={organizerStatus}
+            >
 
-            <main className="relative flex-1 overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
-                <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,var(--brand-yellow),transparent_28%),radial-gradient(circle_at_top_right,var(--brand-rose),transparent_26%)] opacity-20" />
+                <div className="grid auto-rows-min gap-8 lg:grid-cols-2">
+                    <SettingsCard>
+                        <CardHeader
+                            icon={FiUser}
+                            title="Personal Information"
+                            description="Update your basic account details."
+                        />
 
-                <div className="mx-auto max-w-7xl space-y-8">
-                    <PageHeader
-                        title="My Profile"
-                        description="Manage your TicketFlow account details and security."
-                        role={user.role}
-                        organizerStatus={organizerStatus}
-                    />
+                        <FormFields
+                            fields={profileFields}
+                            values={profileFormData}
+                            onChange={handleProfileFieldChange}
+                            disabled={profileLoading}
+                            className="grid gap-5 md:grid-cols-2"
+                        />
 
-                    <div className="grid auto-rows-min gap-8 lg:grid-cols-2">
+                        <div className="mt-5 grid gap-5 md:grid-cols-2">
+                            <ReadOnlyField label="Email address" value={user.email} />
+                            <ReadOnlyField label="Account role" value={roleLabels[user.role]} />
+                        </div>
+
+                        <div className="mt-auto flex justify-end pt-8">
+                            <Button onClick={handleSaveProfile} disabled={profileLoading}>
+                                {profileLoading ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                        </div>
+                    </SettingsCard>
+
+                    <SettingsCard>
+                        <CardHeader
+                            icon={FiLock}
+                            title="Security"
+                            description="Change your account password."
+                        />
+                        <FormFields
+                            fields={passwordFields}
+                            values={passwordFormData}
+                            onChange={handlePasswordFieldChange}
+                            disabled={passwordLoading}
+                            className="grid gap-5"
+                        />
+
+                        <div className="mt-7 rounded-2xl border border-border bg-background p-4">
+                            <p className="text-sm font-medium leading-6 text-muted">
+                                For security, enter your current password before choosing a new one. If you've forgotten your password, sign out and use the <span className="font-semibold text-foreground">Forgot Password</span> option on the login page to reset it.
+                            </p>
+                        </div>
+
+                        <div className="mt-auto flex justify-end pt-8">
+                            <Button onClick={handleChangePassword} disabled={passwordLoading}>
+                                {passwordLoading ? 'Changing...' : 'Change Password'}
+                            </Button>
+                        </div>
+                    </SettingsCard>
+
+                    {user.role === 'organizer' && (
                         <SettingsCard>
-                            <CardHeader
-                                icon={FiUser}
-                                title="Personal Information"
-                                description="Update your basic account details."
-                            />
+                            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <CardHeader
+                                    icon={FiBriefcase}
+                                    title="Organizer Information"
+                                    description="Manage the public details of your organizer profile."
+                                    iconClassName="bg-secondary/15 text-secondary"
+                                />
+
+                                <span className={`inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-black ${getStatusStyles(organizerStatus)}`}>
+                                    {getStatusIcon(organizerStatus)}
+                                    {statusLabels[organizerStatus]}
+                                </span>
+                            </div>
+
+                            {organizerStatus === 'rejected' && user.organizer_profile?.rejection_reason && (
+                                <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold leading-6 text-red-700">
+                                    <strong>Rejection reason:</strong> {user.organizer_profile.rejection_reason}
+                                </div>
+                            )}
+
+                            {organizerStatus === 'pending' && (
+                                <div className="mb-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm font-semibold leading-6 text-yellow-800">
+                                    Your organizer account is waiting for admin review. <span className="font-bold text-brand-rose">If you want to make changes to your organizer profile, please contact support or wait for the review to complete.</span>
+                                </div>
+                            )}
 
                             <FormFields
-                                fields={profileFields}
-                                values={profileFormData}
-                                onChange={handleProfileFieldChange}
-                                disabled={profileLoading}
+                                fields={organizerFields}
+                                values={organizerFormData}
+                                onChange={handleOrganizerFieldChange}
+                                disabled={true}
                                 className="grid gap-5 md:grid-cols-2"
                             />
 
-                            <div className="mt-5 grid gap-5 md:grid-cols-2">
-                                <ReadOnlyField label="Email address" value={user.email} />
-                                <ReadOnlyField label="Account role" value={roleLabels[user.role]} />
-                            </div>
-
-                            <div className="mt-auto flex justify-end pt-8">
-                                <Button onClick={handleSaveProfile} disabled={profileLoading}>
-                                    {profileLoading ? 'Saving...' : 'Save Changes'}
-                                </Button>
-                            </div>
                         </SettingsCard>
+                    )}
 
-                        <SettingsCard>
-                            <CardHeader
-                                icon={FiLock}
-                                title="Security"
-                                description="Change your account password."
-                            />
-                            <FormFields
-                                fields={passwordFields}
-                                values={passwordFormData}
-                                onChange={handlePasswordFieldChange}
-                                disabled={passwordLoading}
-                                className="grid gap-5"
-                            />
+                    <SettingsCard>
+                        <CardHeader
+                            icon={FiCalendar}
+                            title="Account Information"
+                            description="read-only account metadata."
+                        />
 
-                            <div className="mt-7 rounded-2xl border border-border bg-background p-4">
-                                <p className="text-sm font-medium leading-6 text-muted">
-                                    For security, enter your current password before choosing a new one. If you've forgotten your password, sign out and use the <span className="font-semibold text-foreground">Forgot Password</span> option on the login page to reset it.
+                        <div className="space-y-5">
+                            <ReadOnlyField label="Email verified" value={user.is_email_verified ? 'Yes' : 'No'} />
+                            <ReadOnlyField label="Member since" value={formatDate(user.created_at)} />
+                            <ReadOnlyField label="Last updated" value={formatDate(user.updated_at)} />
+                        </div>
+                        {user.is_email_verified ? (
+                            <div className="mt-7 rounded-2xl border border-green-200 bg-green-50 p-4">
+                                <p className="text-sm font-medium leading-6 text-green-700">
+                                    Your email address has been <span className="font-semibold">successfully verified</span>. Your account is fully secured and you can access all TicketFlow features.
                                 </p>
                             </div>
-
-                            <div className="mt-auto flex justify-end pt-8">
-                                <Button onClick={handleChangePassword} disabled={passwordLoading}>
-                                    {passwordLoading ? 'Changing...' : 'Change Password'}
-                                </Button>
+                        ) : (
+                            <div className="mt-7 rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
+                                <p className="text-sm font-medium leading-6 text-yellow-800">
+                                    Your email address has not been verified yet. Please check your inbox for the verification email. If you can't find it, check your spam folder or request a new verification email from the login page.
+                                </p>
                             </div>
-                        </SettingsCard>
-
-                        {user.role === 'organizer' && (
-                            <SettingsCard>
-                                <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                    <CardHeader
-                                        icon={FiBriefcase}
-                                        title="Organizer Information"
-                                        description="Manage the public details of your organizer profile."
-                                        iconClassName="bg-secondary/15 text-secondary"
-                                    />
-
-                                    <span className={`inline-flex w-fit items-center gap-2 rounded-full border px-4 py-2 text-sm font-black ${getStatusStyles(organizerStatus)}`}>
-                                        {getStatusIcon(organizerStatus)}
-                                        {statusLabels[organizerStatus]}
-                                    </span>
-                                </div>
-
-                                {organizerStatus === 'rejected' && user.organizer_profile?.rejection_reason && (
-                                    <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold leading-6 text-red-700">
-                                        <strong>Rejection reason:</strong> {user.organizer_profile.rejection_reason}
-                                    </div>
-                                )}
-
-                                {organizerStatus === 'pending' && (
-                                    <div className="mb-6 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm font-semibold leading-6 text-yellow-800">
-                                        Your organizer account is waiting for admin review. <span className="font-bold text-brand-rose">If you want to make changes to your organizer profile, please contact support or wait for the review to complete.</span>
-                                    </div>
-                                )}
-
-                                <FormFields
-                                    fields={organizerFields}
-                                    values={organizerFormData}
-                                    onChange={handleOrganizerFieldChange}
-                                    disabled={true}
-                                    className="grid gap-5 md:grid-cols-2"
-                                />
-
-                            </SettingsCard>
                         )}
-
-                        <SettingsCard>
-                            <CardHeader
-                                icon={FiCalendar}
-                                title="Account Information"
-                                description="read-only account metadata."
-                            />
-
-                            <div className="space-y-5">
-                                <ReadOnlyField label="Email verified" value={user.is_email_verified ? 'Yes' : 'No'} />
-                                <ReadOnlyField label="Member since" value={formatDate(user.created_at)} />
-                                <ReadOnlyField label="Last updated" value={formatDate(user.updated_at)} />
-                            </div>
-                            {user.is_email_verified ? (
-                                <div className="mt-7 rounded-2xl border border-green-200 bg-green-50 p-4">
-                                    <p className="text-sm font-medium leading-6 text-green-700">
-                                        Your email address has been <span className="font-semibold">successfully verified</span>. Your account is fully secured and you can access all TicketFlow features.
-                                    </p>
-                                </div>
-                            ) : (
-                                <div className="mt-7 rounded-2xl border border-yellow-200 bg-yellow-50 p-4">
-                                    <p className="text-sm font-medium leading-6 text-yellow-800">
-                                        Your email address has not been verified yet. Please check your inbox for the verification email. If you can't find it, check your spam folder or request a new verification email from the login page.
-                                    </p>
-                                </div>
-                            )}
-                        </SettingsCard>
-                    </div>
+                    </SettingsCard>
                 </div>
-            </main>
-
-            <Footer />
-        </div>
+            </PageContainer>
+        </>
     );
 }
 

@@ -23,7 +23,7 @@ const statusLabels: Record<OrganizerApprovalStatus, string> = {
     rejected: 'Rejected',
 };
 
-interface PageHeaderProps {
+export interface PageHeaderProps {
     title: string;
     description: string;
     role?: UserRole;

@@ -1,7 +1,5 @@
 import { useEventForm } from "../hooks/useEventForm";
-import { Header } from "../components/layout/Header";
-import { Footer } from "../components/layout/Footer";
-import { PageHeader } from "../components/ui/PageHeader";
+import PageContainer from "../components/layout/PageContainer"
 import { EventForm } from "../components/events/EventForm";
 import AuthGate from '../pages/AuthGate';
 import { useAuth } from '../context/AuthContext';
@@ -66,52 +64,49 @@ export default function CreateEventsPage() {
 
     return (
         <>
-            <Header />
-            <main className="min-h-screen bg-[#F7F7F8] px-4 py-8 text-[#1E1E1E] dark:bg-[#0B0F14] dark:text-[#E6E6E6] sm:px-6 lg:px-8">
-                <div className="mx-auto max-w-7xl space-y-8">
-                    <PageHeader
-                        title="Organizer Dashboard"
-                        description="Create your event and start selling tickets"
+
+            <PageContainer
+                title="Organizer Dashboard"
+                description="Create your event and start selling tickets"
+            >
+
+                <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+                    <EventForm
+                        formId="create-event-form"
+                        form={form}
+                        basicInformationFields={basicInformationFields}
+                        locationFields={locationFields}
+                        dateTimeFields={dateTimeFields}
+                        ticketFields={ticketFields}
+                        onSubmit={handleCreateEvent}
+                        onFieldChange={updateField}
+                        onCoverImageChange={(file) =>
+                            setForm((prev) => ({
+                                ...prev,
+                                cover_image: file,
+                            }))
+                        }
+                        onTicketChange={updateTicket}
                     />
 
-                    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-                        <EventForm
-                            formId="create-event-form"
-                            form={form}
-                            basicInformationFields={basicInformationFields}
-                            locationFields={locationFields}
-                            dateTimeFields={dateTimeFields}
-                            ticketFields={ticketFields}
-                            onSubmit={handleCreateEvent}
-                            onFieldChange={updateField}
-                            onCoverImageChange={(file) =>
-                                setForm((prev) => ({
-                                    ...prev,
-                                    cover_image: file,
-                                }))
-                            }
-                            onTicketChange={updateTicket}
-                        />
+                    <EventSummary
 
-                        <EventSummary
+                        form={form}
 
-                            form={form}
+                        submitError={submitError}
 
-                            submitError={submitError}
+                        isSubmitting={isSubmitting}
 
-                            isSubmitting={isSubmitting}
+                        formId="create-event-form"
 
-                            formId="create-event-form"
+                        submitLabel="Publish Event"
 
-                            submitLabel="Publish Event"
+                        submittingLabel="Publishing..."
 
-                            submittingLabel="Publishing..."
-
-                        />
-                    </div>
+                    />
                 </div>
-            </main>
-            <Footer />
+            </PageContainer>
         </>
+
     );
 }
