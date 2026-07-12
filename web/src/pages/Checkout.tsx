@@ -16,10 +16,13 @@ import { getEventDetails } from '../api/eventApi';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { Button } from '../components/ui/Button';
+import { useAuth } from '../context/AuthContext';
+import AuthGate from './AuthGate';
 
 
 const CheckoutPage = () => {
     const { slug } = useParams();
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [event, setEvent] =
         useState<EventListPublicItem | null>(null);
@@ -115,6 +118,12 @@ const CheckoutPage = () => {
             </>
         );
 
+    }
+
+    if (!user) {
+        return (
+            <AuthGate />
+        );
     }
 
     if (!event) {
