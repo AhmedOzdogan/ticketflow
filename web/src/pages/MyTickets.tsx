@@ -4,8 +4,6 @@ import {
     FiCheckCircle,
     FiClock,
     FiRefreshCcw,
-    FiSearch,
-    FiChevronDown,
 } from 'react-icons/fi';
 import { TfiTicket } from "react-icons/tfi";
 import { toast } from 'sonner';
@@ -14,7 +12,9 @@ import { downloadTicket } from '../api/orderApi';
 import PageContainer from '../components/layout/PageContainer';
 import { Button } from '../components/ui/Button';
 import QRCode from 'react-qr-code';
-
+import PageDashboard from '../components/ui/PageDashboard';
+import AppSelect from "../components/ui/AppSelect";
+import SearchInput from "../components/ui/SearchInput";
 import type {
     GetTicketsParams,
     TicketListResponse,
@@ -326,91 +326,43 @@ export default function MyTickets() {
                     </div>
                 </div>
 
-                <div className="mt-8 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-6">
-                    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                        <div className="relative w-full xl:max-w-md">
-                            <FiSearch
-                                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
-                                size={18}
+                <PageDashboard>
+                    <SearchInput
+                        value={search}
+                        onChange={setSearch}
+                        placeholder="Search by event or ticket type..."
+                    />
+
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        <AppSelect
+                            value={ticketType}
+                            onChange={setTicketType}
+                            options={ticketTypes.map((type) => ({
+                                value: type.id,
+                                label: type.name,
+                            }))}
+                        />
+
+                        <AppSelect
+                            value={ordering}
+                            onChange={setOrdering}
+                            options={orderingOptions}
+                        />
+
+                        <Button
+                            variant="outline"
+                            disabled={loading || refreshing}
+                            onClick={() => void fetchTickets(true)}
+                            className="h-12 gap-2"
+                        >
+                            <FiRefreshCcw
+                                className={refreshing ? 'animate-spin' : ''}
                             />
-
-                            <input
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                placeholder="Search by event or ticket type..."
-                                className="h-12 w-full rounded-xl border border-border bg-background pl-11 pr-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            />
-                        </div>
-
-                        <div className="flex flex-col gap-3 sm:flex-row">
-                            <div className="relative">
-                                <select
-                                    value={ticketType}
-                                    onChange={(event) =>
-                                        setTicketType(event.target.value)
-                                    }
-                                    className="h-12 min-w-44 appearance-none rounded-xl border border-border bg-background px-4 pr-10 text-sm font-semibold text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                >
-                                    {ticketTypes.map((type) => (
-                                        <option
-                                            key={type.id}
-                                            value={type.id}
-                                        >
-                                            {type.name}
-                                        </option>
-                                    ))}
-                                </select>
-
-                                <FiChevronDown
-                                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted"
-                                    size={16}
-                                />
-                            </div>
-
-                            <div className="relative">
-                                <select
-                                    value={ordering}
-                                    onChange={(event) =>
-                                        setOrdering(event.target.value)
-                                    }
-                                    className="h-12 min-w-44 appearance-none rounded-xl border border-border bg-background px-4 pr-10 text-sm font-semibold text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                >
-                                    {orderingOptions.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-
-                                <FiChevronDown
-                                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted"
-                                    size={16}
-                                />
-                            </div>
-
-                            <Button
-                                variant="outline"
-                                disabled={loading || refreshing}
-                                onClick={() => void fetchTickets(true)}
-                                className="flex h-12 items-center justify-center gap-2"
-                            >
-                                <FiRefreshCcw
-                                    className={
-                                        refreshing ? 'animate-spin' : ''
-                                    }
-                                />
-
-                                Refresh
-                            </Button>
-                        </div>
+                            Refresh
+                        </Button>
                     </div>
 
-                    <div className="mt-6 flex flex-wrap gap-2">
+                    <div className="flex flex-wrap items-center justify-center gap-2 xl:justify-start">
                         {statusFilters.map((filter) => (
                             <button
                                 key={filter.value}
@@ -425,7 +377,7 @@ export default function MyTickets() {
                             </button>
                         ))}
                     </div>
-                </div>
+                </PageDashboard>
 
                 <div className="mt-8">
                     {loading ? (

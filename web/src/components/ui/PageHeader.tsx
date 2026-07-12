@@ -50,7 +50,7 @@ export function PageHeader({
     organizerStatus,
 }: PageHeaderProps) {
     return (
-        <section className="rounded-[2rem] border border-border bg-surface p-6 shadow-2xl shadow-brand-black/10 sm:p-8">
+        <section className="rounded-2xl border border-border bg-surface p-6 shadow-2xl shadow-brand-black/10 sm:p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
                     <p className="text-xl font-black uppercase tracking-wide text-primary">

@@ -6,7 +6,9 @@ import type { EventListItem } from "../types/events";
 import { getApiErrorMessage } from "../utils/getApiErrorMessages";
 import { Button } from "../components/ui/Button";
 import PageContainer from "../components/layout/PageContainer";
-
+import PageDashboard from "../components/ui/PageDashboard";
+import AppSelect from "../components/ui/AppSelect";
+import SearchInput from "../components/ui/SearchInput";
 import {
     FiCalendar,
     FiEye,
@@ -16,7 +18,6 @@ import {
     FiFileText,
     FiMapPin,
     FiPlus,
-    FiSearch,
     FiTag,
     FiXCircle,
 } from "react-icons/fi";
@@ -24,6 +25,24 @@ import { Loading } from "../components/ui/Loading";
 import Pagination from "../components/ui/Pagination";
 
 const PAGE_SIZE = 10;
+
+const statusOptions = [
+    { value: "all", label: "All Statuses" },
+    { value: "published", label: "Published" },
+    { value: "pending", label: "Pending" },
+    { value: "draft", label: "Draft" },
+    { value: "rejected", label: "Rejected" },
+    { value: "cancelled", label: "Cancelled" },
+];
+
+const orderingOptions = [
+    { value: "-created_at", label: "Newest First" },
+    { value: "created_at", label: "Oldest First" },
+    { value: "start_date", label: "Start Date" },
+    { value: "-start_date", label: "Latest Start Date" },
+    { value: "title", label: "Title A-Z" },
+    { value: "-title", label: "Title Z-A" },
+];
 
 function MyEvents() {
     const navigate = useNavigate();
@@ -145,88 +164,51 @@ function MyEvents() {
                 description="Manage, monitor and update your events.">
 
                 <main className="mx-auto w-full max-w-7xl pb-10 sm:px-0">
-                    <div className="mb-8 rounded-2xl border bg-white p-5 shadow-sm sm:p-6">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                            <div className="shrink-0">
-                                <h2 className="text-3xl font-bold">
-                                    Event Dashboard
-                                </h2>
+                    <PageDashboard
+                        title="Event Dashboard"
+                        description="View and manage all of your events."
+                    >
+                        <form
+                            onSubmit={handleSearch}
+                            className="w-full xl:max-w-md"
+                        >
+                            <SearchInput
+                                value={searchInput}
+                                onChange={setSearchInput}
+                                placeholder="Search events..."
+                            />
+                        </form>
 
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    View and manage all of your events.
-                                </p>
-                            </div>
+                        <div className="flex flex-col gap-3 md:flex-row">
+                            <AppSelect
+                                value={statusFilter}
+                                onChange={(value) => {
+                                    setPage(1);
+                                    setStatusFilter(value);
+                                }}
+                                options={statusOptions}
+                            />
 
-                            <div className="grid w-full gap-3 md:grid-cols-2 lg:max-w-4xl lg:grid-cols-[minmax(240px,1fr)_190px_210px_auto]">
-                                <form
-                                    onSubmit={handleSearch}
-                                    className="relative"
-                                >
-                                    <FiSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <AppSelect
+                                value={ordering}
+                                onChange={(value) => {
+                                    setPage(1);
+                                    setOrdering(value);
+                                }}
+                                options={orderingOptions}
+                            />
 
-                                    <input
-                                        value={searchInput}
-                                        onChange={(event) =>
-                                            setSearchInput(event.target.value)
-                                        }
-                                        placeholder="Search events..."
-                                        className="h-11 w-full rounded-xl border bg-white pl-10 pr-24 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                    />
-
-                                    <button
-                                        type="submit"
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-primary"
-                                    >
-                                        Search
-                                    </button>
-                                </form>
-
-                                <select
-                                    value={statusFilter}
-                                    onChange={(event) => {
-                                        setPage(1);
-                                        setStatusFilter(event.target.value);
-                                    }}
-                                    className="h-11 w-full rounded-xl border bg-white px-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                >
-                                    <option value="all">All Statuses</option>
-                                    <option value="published">Published</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="draft">Draft</option>
-                                    <option value="rejected">Rejected</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-
-                                <select
-                                    value={ordering}
-                                    onChange={(event) => {
-                                        setPage(1);
-                                        setOrdering(event.target.value);
-                                    }}
-                                    className="h-11 w-full rounded-xl border bg-white px-4 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                >
-                                    <option value="-created_at">Newest First</option>
-                                    <option value="created_at">Oldest First</option>
-                                    <option value="start_date">Start Date</option>
-                                    <option value="-start_date">
-                                        Latest Start Date
-                                    </option>
-                                    <option value="title">Title A-Z</option>
-                                    <option value="-title">Title Z-A</option>
-                                </select>
-
-                                <Button
-                                    className="h-11 w-full whitespace-nowrap px-5 md:col-span-2 xl:col-span-1 xl:w-auto"
-                                    onClick={() =>
-                                        navigate("/organizer/create-event/")
-                                    }
-                                >
-                                    <FiPlus className="mr-2 shrink-0" />
-                                    Create Event
-                                </Button>
-                            </div>
+                            <Button
+                                className="h-12 whitespace-nowrap"
+                                onClick={() =>
+                                    navigate("/organizer/create-event")
+                                }
+                            >
+                                <FiPlus className="mr-2" />
+                                Create Event
+                            </Button>
                         </div>
-                    </div>
+                    </PageDashboard>
 
                     <div className="mb-10 grid gap-5 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
                         <div className="rounded-2xl border bg-white p-6 shadow-sm">

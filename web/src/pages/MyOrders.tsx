@@ -3,12 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
     FiAlertCircle,
     FiCheckCircle,
-    FiChevronDown,
     FiClock,
     FiCreditCard,
     FiPackage,
     FiRefreshCcw,
-    FiSearch,
     FiShoppingBag,
     FiXCircle,
 } from 'react-icons/fi';
@@ -18,7 +16,9 @@ import { getOrders, cancelOrder } from '../api/orderApi';
 import PageContainer from '../components/layout/PageContainer';
 import { Button } from '../components/ui/Button';
 import { Loading } from '../components/ui/Loading';
-
+import PageDashboard from '../components/ui/PageDashboard';
+import AppSelect from "../components/ui/AppSelect";
+import SearchInput from "../components/ui/SearchInput";
 import type {
     GetOrdersParams,
     OrderListResponse,
@@ -337,104 +337,67 @@ export default function MyOrders() {
                     </div>
                 </div>
 
-                <div className="mt-8 rounded-2xl border border-border bg-surface p-4 shadow-sm sm:p-6">
-                    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                        <div className="relative w-full xl:max-w-md">
-                            <FiSearch
-                                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
-                                size={18}
-                            />
+                <PageDashboard
+                    filters={
+                        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 xl:justify-start">
+                            {statusFilters.map((filter) => {
+                                const isActive = statusFilter === filter.value;
 
-                            <input
-                                type="search"
-                                value={search}
-                                onChange={(event) =>
-                                    setSearch(event.target.value)
-                                }
-                                placeholder="Search by event title or status..."
-                                className="h-12 w-full rounded-xl border border-border bg-background pl-11 pr-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            />
-                        </div>
+                                return (
+                                    <button
+                                        key={filter.value}
+                                        type="button"
+                                        onClick={() => setStatusFilter(filter.value)}
+                                        className={`rounded-full border px-4 py-2 text-sm font-bold transition ${isActive
+                                            ? 'border-primary bg-primary text-primary-foreground'
+                                            : 'border-border bg-background text-muted hover:border-primary/40 hover:text-foreground'
+                                            }`}
+                                    >
+                                        {filter.label}
+                                    </button>
+                                );
+                            })}
 
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                            <div className="relative">
-                                <select
-                                    value={ordering}
-                                    onChange={(event) =>
-                                        setOrdering(event.target.value)
-                                    }
-                                    className="h-12 min-w-48 appearance-none rounded-xl border border-border bg-background px-4 pr-10 text-sm font-semibold text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                >
-                                    {orderingOptions.map((option) => (
-                                        <option
-                                            key={option.value}
-                                            value={option.value}
-                                        >
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-
-                                <FiChevronDown
-                                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-muted"
-                                    size={16}
-                                />
-                            </div>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="flex h-12 items-center justify-center gap-2"
-                                disabled={isRefreshing}
-                                onClick={() => void fetchOrders(true)}
-                            >
-                                <FiRefreshCcw
-                                    className={
-                                        isRefreshing
-                                            ? 'animate-spin'
-                                            : ''
-                                    }
-                                />
-
-                                Refresh
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-2">
-                        {statusFilters.map((filter) => {
-                            const isActive =
-                                statusFilter === filter.value;
-
-                            return (
+                            {hasActiveFilters && (
                                 <button
-                                    key={filter.value}
                                     type="button"
-                                    onClick={() =>
-                                        setStatusFilter(filter.value)
-                                    }
-                                    className={`rounded-full border px-4 py-2 text-sm font-bold transition ${isActive
-                                        ? 'border-primary bg-primary text-primary-foreground'
-                                        : 'border-border bg-background text-muted hover:border-primary/40 hover:text-foreground'
-                                        }`}
+                                    onClick={clearFilters}
+                                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10 xl:ml-auto"
                                 >
-                                    {filter.label}
+                                    <FiAlertCircle />
+                                    Clear filters
                                 </button>
-                            );
-                        })}
+                            )}
+                        </div>
+                    }
+                >
+                    <SearchInput
+                        value={search}
+                        onChange={setSearch}
+                        placeholder="Search by event title or status..."
+                    />
 
-                        {hasActiveFilters && (
-                            <button
-                                type="button"
-                                onClick={clearFilters}
-                                className="ml-auto inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10"
-                            >
-                                <FiAlertCircle />
-                                Clear filters
-                            </button>
-                        )}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <AppSelect
+                            value={ordering}
+                            onChange={setOrdering}
+                            options={orderingOptions}
+                        />
+
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="flex h-12 items-center justify-center gap-2"
+                            disabled={isRefreshing}
+                            onClick={() => void fetchOrders(true)}
+                        >
+                            <FiRefreshCcw
+                                className={isRefreshing ? 'animate-spin' : ''}
+                            />
+                            Refresh
+                        </Button>
                     </div>
-                </div>
+                </PageDashboard>
 
                 <div className="mt-8">
                     {isLoading ? (
