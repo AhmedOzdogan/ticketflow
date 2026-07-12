@@ -13,7 +13,7 @@ import {
     FiXCircle,
 } from 'react-icons/fi';
 import { toast } from 'sonner';
-
+import Pagination from '../components/ui/Pagination';
 import { getOrders, cancelOrder } from '../api/orderApi';
 import PageContainer from '../components/layout/PageContainer';
 import { Button } from '../components/ui/Button';
@@ -695,80 +695,12 @@ export default function MyOrders() {
                     )}
                 </div>
 
-                {totalPages > 1 && (
-                    <div className="mt-10 flex flex-col items-center justify-between gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm sm:flex-row">
-                        <p className="text-sm text-muted">
-                            Showing page{' '}
-                            <span className="font-bold text-foreground">
-                                {page}
-                            </span>{' '}
-                            of{' '}
-                            <span className="font-bold text-foreground">
-                                {totalPages}
-                            </span>
-                        </p>
-
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                disabled={page === 1}
-                                onClick={() =>
-                                    setPage((previous) =>
-                                        Math.max(previous - 1, 1),
-                                    )
-                                }
-                            >
-                                Previous
-                            </Button>
-
-                            {Array.from(
-                                {
-                                    length: totalPages,
-                                },
-                                (_, index) => index + 1,
-                            )
-                                .slice(
-                                    Math.max(0, page - 3),
-                                    Math.min(
-                                        totalPages,
-                                        page + 2,
-                                    ),
-                                )
-                                .map((pageNumber) => (
-                                    <button
-                                        key={pageNumber}
-                                        type="button"
-                                        onClick={() =>
-                                            setPage(pageNumber)
-                                        }
-                                        className={`flex h-11 w-11 items-center justify-center rounded-xl border text-sm font-bold transition ${page === pageNumber
-                                            ? 'border-primary bg-primary text-primary-foreground'
-                                            : 'border-border bg-background hover:border-primary/40 hover:bg-primary/5'
-                                            }`}
-                                    >
-                                        {pageNumber}
-                                    </button>
-                                ))}
-
-                            <Button
-                                variant="outline"
-                                disabled={
-                                    page === totalPages
-                                }
-                                onClick={() =>
-                                    setPage((previous) =>
-                                        Math.min(
-                                            previous + 1,
-                                            totalPages,
-                                        ),
-                                    )
-                                }
-                            >
-                                Next
-                            </Button>
-                        </div>
-                    </div>
-                )}
+                <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    loading={isLoading}
+                    onPageChange={setPage}
+                />
             </PageContainer >
         </>
     );

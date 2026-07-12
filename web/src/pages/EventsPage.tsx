@@ -7,6 +7,7 @@ import { Loading } from '../components/ui/Loading';
 import { Button } from '../components/ui/Button';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
+import Pagination from '../components/ui/Pagination'
 
 const categories = [
     { label: 'All', value: 'All' },
@@ -184,39 +185,13 @@ function Events() {
                             </div>
                         </div>
                         {/* Pagination */}
-                        {response && totalPages > 1 && (
-                            <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    disabled={page === 1 || loading}
-                                    onClick={() => setPage((p) => p - 1)}
-                                >
-                                    Previous
-                                </Button>
-
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
-                                    <button
-                                        key={pageNumber}
-                                        type="button"
-                                        disabled={loading}
-                                        onClick={() => setPage(pageNumber)}
-                                        className={`size-10 rounded-full border font-bold transition ${pageNumber === page
-                                            ? 'border-primary bg-primary text-primary-foreground'
-                                            : 'border-border bg-background hover:border-primary hover:text-primary'
-                                            }`}
-                                    >
-                                        {pageNumber}
-                                    </button>
-                                ))}
-
-                                <Button
-                                    variant="outline"
-                                    disabled={page === totalPages || loading}
-                                    onClick={() => setPage((p) => p + 1)}
-                                >
-                                    Next
-                                </Button>
-                            </div>
+                        {response && (
+                            <Pagination
+                                page={page}
+                                totalPages={totalPages}
+                                loading={loading}
+                                onPageChange={setPage}
+                            />
                         )}
                     </div>
                 </section>

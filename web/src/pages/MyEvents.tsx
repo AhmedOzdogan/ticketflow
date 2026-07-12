@@ -21,6 +21,7 @@ import {
     FiXCircle,
 } from "react-icons/fi";
 import { Loading } from "../components/ui/Loading";
+import Pagination from "../components/ui/Pagination";
 
 const PAGE_SIZE = 10;
 
@@ -533,59 +534,12 @@ function MyEvents() {
 
                             {/* Pagination */}
 
-                            <div className="mt-12 flex flex-col items-center justify-between gap-4 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row">
-                                <p className="text-sm text-muted-foreground">
-                                    Showing {(page - 1) * PAGE_SIZE + 1}–
-                                    {Math.min(page * PAGE_SIZE, count)} of {count}
-                                </p>
-
-                                <div className="flex flex-wrap items-center justify-center gap-2">
-                                    <Button
-                                        variant="outline"
-                                        disabled={page === 1}
-                                        onClick={() =>
-                                            setPage((current) =>
-                                                Math.max(1, current - 1)
-                                            )
-                                        }
-                                    >
-                                        Previous
-                                    </Button>
-
-                                    {Array.from(
-                                        { length: totalPages },
-                                        (_, index) => index + 1
-                                    ).map((pageNumber) => (
-                                        <Button
-                                            key={pageNumber}
-                                            variant={
-                                                pageNumber === page
-                                                    ? "primary"
-                                                    : "outline"
-                                            }
-                                            onClick={() => setPage(pageNumber)}
-                                            className="min-w-10 px-3"
-                                        >
-                                            {pageNumber}
-                                        </Button>
-                                    ))}
-
-                                    <Button
-                                        variant="outline"
-                                        disabled={page >= totalPages}
-                                        onClick={() =>
-                                            setPage((current) =>
-                                                Math.min(
-                                                    totalPages,
-                                                    current + 1
-                                                )
-                                            )
-                                        }
-                                    >
-                                        Next
-                                    </Button>
-                                </div>
-                            </div>
+                            <Pagination
+                                page={page}
+                                totalPages={totalPages}
+                                loading={isLoading}
+                                onPageChange={setPage}
+                            />
                         </>
                     )}
                 </main>
