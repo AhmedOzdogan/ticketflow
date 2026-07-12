@@ -20,6 +20,7 @@ import type {
     TicketListResponse,
     TicketStatus,
 } from '../types/order';
+import { Loading } from '../components/ui/Loading';
 
 type TicketStatusFilter = 'all' | TicketStatus;
 
@@ -146,6 +147,7 @@ export default function MyTickets() {
                 await getTickets(params);
 
             setTicketsData(response);
+            await new Promise((resolve) => setTimeout(resolve, 500));
         } catch (error) {
             console.error(error);
 
@@ -428,11 +430,7 @@ export default function MyTickets() {
                 <div className="mt-8">
                     {loading ? (
                         <div className="rounded-2xl border border-border bg-surface p-20 text-center shadow-sm">
-                            <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-
-                            <p className="mt-5 text-sm font-medium text-muted">
-                                Loading your tickets...
-                            </p>
+                            <Loading />
                         </div>
                     ) : tickets.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-border bg-surface p-16 text-center shadow-sm">

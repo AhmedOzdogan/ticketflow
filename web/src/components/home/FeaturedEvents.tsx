@@ -2,6 +2,7 @@ import { Button } from '../ui/Button';
 import { useNavigate } from 'react-router-dom';
 import type { EventListPublicItem } from '../../types/events';
 import { EventCard } from '../ui/EventCard';
+import { Loading } from '../ui/Loading';
 
 type FeaturedEventsProps = {
     events: EventListPublicItem[];
@@ -31,9 +32,9 @@ export function FeaturedEvents({ events, loading }: FeaturedEventsProps) {
                     </Button>
                 </div>
 
-                {loading && (
-                    <p className="mt-12 text-center text-muted">Loading events...</p>
-                )}
+                {loading &&
+                    <Loading message='Loading home...' overlay />
+                }
 
                 <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                     {events.slice(0, 4).map((event) => (

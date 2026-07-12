@@ -8,20 +8,23 @@ import { Header } from '../components/layout/Header';
 import { useState, useEffect } from 'react';
 import type { PublicEventListPaginatedResponse, EventListPublicItem } from '../types/events';
 import { getEvents } from '../api/eventApi';
+import { toast } from "sonner";
 
 function HomePage() {
     const [events, setEvents] = useState<EventListPublicItem[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        setLoading(true)
         async function loadEvents() {
             try {
                 const data: PublicEventListPaginatedResponse = await getEvents({
                     ordering: "-created_at",
                 });
+
                 setEvents(data.results);
             } catch (error) {
-                console.error('Failed to load events', error);
+                toast.error("There was a problem while loading. Please refresh the page")
             } finally {
                 setLoading(false);
             }

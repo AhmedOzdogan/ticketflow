@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import AuthGate from './AuthGate';
 import { toast } from "sonner";
 import { createOrder } from '../api/orderApi';
+import { Loading } from '../components/ui/Loading';
 
 
 const CheckoutPage = () => {
@@ -58,7 +59,7 @@ const CheckoutPage = () => {
                             initial[ticket.id] = 0;
                         }
                     });
-
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
                     setQuantities(initial);
                 }
             } catch (error) {
@@ -177,13 +178,11 @@ const CheckoutPage = () => {
     if (loading) {
         return (
             <>
-                <Header />
-                <main className="min-h-screen" />
-                <Footer />
+                <Loading message='Checkout details are loading...' overlay />
             </>
         );
 
-    }
+    };
 
     if (!user) {
         return (

@@ -24,6 +24,7 @@ import {
     FiTag,
     FiXCircle,
 } from "react-icons/fi";
+import { Loading } from "../components/ui/Loading";
 
 const PAGE_SIZE = 10;
 
@@ -55,7 +56,7 @@ function MyEvents() {
                     search: search || undefined,
                     ordering,
                 });
-
+                await new Promise((resolve) => setTimeout(resolve, 500));
                 setEvents(data.results);
                 setCount(data.count);
             } catch (error) {
@@ -282,10 +283,8 @@ function MyEvents() {
                     </div>
 
                     {isLoading ? (
-                        <div className="flex h-96 items-center justify-center rounded-2xl border bg-white">
-                            <p className="text-lg text-muted-foreground">
-                                Loading your events...
-                            </p>
+                        <div className="rounded-2xl border bg-white py-20 text-center shadow-sm">
+                            <Loading />
                         </div>
                     ) : visibleEvents.length === 0 ? (
                         <div className="rounded-2xl border bg-white py-20 text-center shadow-sm">

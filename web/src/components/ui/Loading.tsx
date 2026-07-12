@@ -1,4 +1,4 @@
-
+import { FiLoader } from "react-icons/fi";
 
 type LoadingProps = {
     message?: string;
@@ -18,7 +18,7 @@ export function Loading({
     return (
         <div className={wrapperClassName}>
             <div className="flex flex-col items-center gap-4 rounded-3xl border border-border bg-surface px-8 py-6 shadow-xl shadow-brand-black/10">
-                <span className="size-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
+                <FiLoader className="h-10 w-10 animate-spin text-primary" />
                 <p className="text-sm font-bold text-muted">{message}</p>
             </div>
         </div>

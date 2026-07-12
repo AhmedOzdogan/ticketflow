@@ -5,9 +5,6 @@ import { editEvent, getManageEventDetails } from "../api/eventApi";
 import { getApiErrorMessage } from "../utils/getApiErrorMessages";
 import type { UpdateEvent } from "../types/events";
 import { useEventForm } from "../hooks/useEventForm";
-import { Header } from "../components/layout/Header";
-import { Footer } from "../components/layout/Footer";
-import { PageHeader } from "../components/ui/PageHeader";
 import { EventForm } from "../components/events/EventForm";
 import AuthGate from '../pages/AuthGate';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +18,7 @@ import {
     dateTimeFields,
     ticketFields,
 } from "../data/eventFormFields";
+import { Loading } from "../components/ui/Loading";
 
 export default function EditEventsPage() {
     const { user } = useAuth();
@@ -87,6 +85,7 @@ export default function EditEventsPage() {
                         total_quantity: ticket.total_quantity,
                     })),
                 } satisfies UpdateEvent);
+                await new Promise((resolve) => setTimeout(resolve, 500));
             } catch (error) {
                 toast.error(getApiErrorMessage(error));
             } finally {
@@ -102,23 +101,6 @@ export default function EditEventsPage() {
     }
     if (user.role !== 'admin' && user.role !== 'organizer') {
         return <AuthGate variant="unauthorized" />;
-    }
-
-    if (isLoading) {
-        return (
-            <>
-                <Header />
-                <main className="min-h-screen bg-[#F7F7F8] px-4 py-8 text-[#1E1E1E] dark:bg-[#0B0F14] dark:text-[#E6E6E6] sm:px-6 lg:px-8">
-                    <div className="mx-auto max-w-7xl space-y-8">
-                        <PageHeader
-                            title="Organizer Dashboard"
-                            description="Loading event details..."
-                        />
-                    </div>
-                </main>
-                <Footer />
-            </>
-        );
     }
 
     const handleUpdateEvent = async () => {
@@ -157,6 +139,8 @@ export default function EditEventsPage() {
                 title="Organizer Dashboard"
                 description="Edit your event and update details"
             >
+                {isLoading &&
+                    <Loading message='Event Details are Loading' overlay />}
 
                 <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
                     <EventForm

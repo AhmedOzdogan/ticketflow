@@ -107,7 +107,7 @@ const EventDetailPage = () => {
         return (
             <>
                 <Header />
-                <Loading />
+                <Loading overlay />
                 <Footer />
             </>
         );

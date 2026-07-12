@@ -2,6 +2,7 @@ import { FiArrowRight, FiCheckCircle } from 'react-icons/fi';
 import { Button } from '../ui/Button';
 import type { EventListPublicItem } from '../../types/events';
 import { EventCard } from '../ui/EventCard';
+import { Loading } from '../ui/Loading';
 
 
 type HeroSectionProps = {
@@ -58,11 +59,7 @@ export function HeroSection({ featuredEvent, loading }: HeroSectionProps) {
                     <div className="absolute -left-6 -top-6 size-24 rounded-full bg-secondary/40 blur-2xl" />
                     <div className="absolute -bottom-8 -right-8 size-32 rounded-full bg-primary/30 blur-2xl" />
 
-                    {loading ? (
-                        <div className="flex h-[650px] items-center justify-center rounded-[2rem] border border-border bg-surface shadow-2xl shadow-brand-black/10">
-                            <p className="text-sm font-semibold text-muted">Loading newest event...</p>
-                        </div>
-                    ) : featuredEvent ? (
+                    {loading ? <Loading message='Loading newest event...' /> : featuredEvent ? (
                         <EventCard event={featuredEvent} variant="hero" />
                     ) : (
                         <div className="flex h-[650px] items-center justify-center rounded-[2rem] border border-dashed border-border bg-surface">
