@@ -25,6 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config("DJANGO_SECRET_KEY")
 DEBUG = config("DJANGO_DEBUG", cast=bool, default=False)
+PAYMENT_SERVICE_TOKEN = config("PAYMENT_SERVICE_TOKEN")
 ALLOWED_HOSTS = config(
     "DJANGO_ALLOWED_HOSTS",
     cast=lambda value: [host.strip() for host in value.split(",")],
