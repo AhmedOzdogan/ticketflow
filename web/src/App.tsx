@@ -40,7 +40,7 @@ function App() {
         </Route>
 
         {/* Organizers */}
-        <Route element={<RequireRole allowedRoles={['organizer']} />}>
+        <Route element={<RequireRole allowedRoles={['organizer', 'admin']} />}>
           <Route
             path="/organizer/feature-preview"
             element={<FeaturePreview />}
