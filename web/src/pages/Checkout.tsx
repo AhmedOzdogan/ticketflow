@@ -18,6 +18,8 @@ import { Footer } from '../components/layout/Footer';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import AuthGate from './AuthGate';
+import { toast } from "sonner";
+import { createOrder } from '../api/orderApi';
 
 
 const CheckoutPage = () => {
@@ -28,6 +30,7 @@ const CheckoutPage = () => {
         useState<EventListPublicItem | null>(null);
     const [loading, setLoading] = useState(true);
     const [quantities, setQuantities] = useState<Record<string, number>>({});
+    const [isCreatingOrder, setIsCreatingOrder] = useState(false);
 
     useEffect(() => {
         if (!slug) {
@@ -48,7 +51,15 @@ const CheckoutPage = () => {
 
                 if (mounted) {
                     setEvent(data);
-                    console.log(data)
+
+                    const initial: Record<string, number> = {};
+                    data.ticket_types.forEach(ticket => {
+                        if (ticket.id) {
+                            initial[ticket.id] = 0;
+                        }
+                    });
+
+                    setQuantities(initial);
                 }
             } catch (error) {
                 console.error('Failed to load event', error);
@@ -65,6 +76,7 @@ const CheckoutPage = () => {
             mounted = false;
         };
     }, [slug]);
+
     const updateQuantity = (
         ticketId: string,
         delta: number,
@@ -104,10 +116,63 @@ const CheckoutPage = () => {
         );
     }, [event, quantities]);
 
-
     const total = subtotal;
     const tax = Number((total! * 18 / 118).toFixed(2));
     const subtotalExcludingTax = Number((total! - tax).toFixed(2));
+
+    const handlePayment = async () => {
+        if (event && !event.id) {
+            toast.error('Event ID is missing.');
+            return;
+        }
+
+        const items = Object.entries(quantities)
+            .filter(([, quantity]) => quantity > 0)
+            .map(([ticketTypeId, quantity]) => ({
+                ticket_type: ticketTypeId,
+                quantity,
+            }));
+
+        if (items.length === 0) {
+            toast.error('Please select at least one ticket.');
+            return;
+        }
+
+        try {
+            setIsCreatingOrder(true);
+
+            const order = await createOrder({
+                event: event!.id!,
+                items,
+            });
+
+            const response = await fetch(
+                'http://localhost:5001/payment/create-checkout-session',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: order.id,
+                    }),
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to create Stripe checkout session.');
+            }
+
+            const checkout = await response.json();
+
+            window.location.href = checkout.checkout_url;
+        } catch (error) {
+            console.error('Failed to create order:', error);
+            toast.error('Could not create your order. Please try again.');
+        } finally {
+            setIsCreatingOrder(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -346,26 +411,12 @@ const CheckoutPage = () => {
                                     </label>
 
                                     <input
-                                        value="ahmed@example.com"
+                                        value={user?.email ?? ""}
                                         readOnly
                                         className="w-full rounded-xl border border-border bg-background px-4 py-3"
                                     />
 
                                 </div>
-
-                                <div>
-
-                                    <label className="mb-2 block text-sm font-semibold">
-                                        Full Name
-                                    </label>
-
-                                    <input
-                                        placeholder="Optional"
-                                        className="w-full rounded-xl border border-border bg-background px-4 py-3 outline-none focus:border-primary"
-                                    />
-
-                                </div>
-
                             </div>
 
                         </div>
@@ -480,7 +531,7 @@ const CheckoutPage = () => {
                                 </span>
 
                                 <span className="text-4xl font-black text-primary">
-                                    €{total!.toFixed(2)}
+                                    €{total.toFixed(2)}
                                 </span>
 
                             </div>
@@ -535,9 +586,10 @@ const CheckoutPage = () => {
                             <Button
                                 size="lg"
                                 className="mt-8 w-full"
-                                disabled={totalTickets === 0}
+                                disabled={totalTickets === 0 || isCreatingOrder}
+                                onClick={() => handlePayment()}
                             >
-                                Proceed to Stripe
+                                {isCreatingOrder ? 'Creating Order...' : 'Buy the tickets now!'}
                             </Button>
 
                             <p className="mt-4 text-center text-xs text-muted">
