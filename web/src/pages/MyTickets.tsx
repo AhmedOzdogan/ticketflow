@@ -21,27 +21,27 @@ import type {
     TicketStatus,
 } from '../types/order';
 import { Loading } from '../components/ui/Loading';
+import FilterChips from '../components/ui/FilterChips';
 
 type TicketStatusFilter = 'all' | TicketStatus;
 
-const statusFilters: {
-    label: string;
-    value: TicketStatusFilter;
-}[] = [
-        {
-            label: 'All',
-            value: 'all',
-        },
-        {
-            label: 'Active',
-            value: 'active',
-        },
-        {
-            label: 'Used',
-            value: 'used',
-        },
-    ];
-
+const statusFilters = [
+    {
+        label: 'All',
+        value: 'all',
+        icon: TfiTicket,
+    },
+    {
+        label: 'Active',
+        value: 'active',
+        icon: FiCheckCircle,
+    },
+    {
+        label: 'Used',
+        value: 'used',
+        icon: FiClock,
+    },
+];
 
 const orderingOptions = [
     {
@@ -326,7 +326,18 @@ export default function MyTickets() {
                     </div>
                 </div>
 
-                <PageDashboard>
+                <PageDashboard
+                    filters={
+                        <FilterChips
+                            value={status}
+                            options={statusFilters}
+                            onChange={(value) => {
+                                setPage(1);
+                                setStatus(value as TicketStatusFilter);
+                            }}
+                        />
+                    }
+                >
                     <SearchInput
                         value={search}
                         onChange={setSearch}
@@ -360,22 +371,6 @@ export default function MyTickets() {
                             />
                             Refresh
                         </Button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-center gap-2 xl:justify-start">
-                        {statusFilters.map((filter) => (
-                            <button
-                                key={filter.value}
-                                type="button"
-                                onClick={() => setStatus(filter.value)}
-                                className={`rounded-full border px-4 py-2 text-sm font-bold transition ${status === filter.value
-                                    ? 'border-primary bg-primary text-primary-foreground'
-                                    : 'border-border bg-background text-muted hover:border-primary hover:text-primary'
-                                    }`}
-                            >
-                                {filter.label}
-                            </button>
-                        ))}
                     </div>
                 </PageDashboard>
 

@@ -24,42 +24,47 @@ import type {
     OrderListResponse,
     OrderStatus,
 } from '../types/order';
+import FilterChips from '../components/ui/FilterChips';
 
 type OrderStatusFilter = 'all' | OrderStatus;
 
-const statusFilters: Array<{
-    label: string;
-    value: OrderStatusFilter;
-}> = [
-        {
-            label: 'All',
-            value: 'all',
-        },
-        {
-            label: 'Paid',
-            value: 'paid',
-        },
-        {
-            label: 'Pending',
-            value: 'pending',
-        },
-        {
-            label: 'Processing',
-            value: 'processing',
-        },
-        {
-            label: 'Cancelled',
-            value: 'cancelled',
-        },
-        {
-            label: 'Refunded',
-            value: 'refunded',
-        },
-        {
-            label: 'Failed',
-            value: 'failed',
-        },
-    ];
+const statusFilters = [
+    {
+        label: 'All',
+        value: 'all',
+        icon: FiShoppingBag,
+    },
+    {
+        label: 'Paid',
+        value: 'paid',
+        icon: FiCheckCircle,
+    },
+    {
+        label: 'Pending',
+        value: 'pending',
+        icon: FiClock,
+    },
+    {
+        label: 'Processing',
+        value: 'processing',
+        icon: FiRefreshCcw,
+    },
+    {
+        label: 'Cancelled',
+        value: 'cancelled',
+        icon: FiXCircle,
+    },
+    {
+        label: 'Refunded',
+        value: 'refunded',
+        icon: FiCreditCard,
+    },
+    {
+        label: 'Failed',
+        value: 'failed',
+        icon: FiAlertCircle,
+    },
+];
 
 const orderingOptions = [
     {
@@ -339,36 +344,26 @@ export default function MyOrders() {
 
                 <PageDashboard
                     filters={
-                        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 xl:justify-start">
-                            {statusFilters.map((filter) => {
-                                const isActive = statusFilter === filter.value;
-
-                                return (
+                        <FilterChips
+                            value={statusFilter}
+                            options={statusFilters}
+                            onChange={(value) => {
+                                setPage(1);
+                                setStatusFilter(value as OrderStatusFilter);
+                            }}
+                            trailing={
+                                hasActiveFilters && (
                                     <button
-                                        key={filter.value}
                                         type="button"
-                                        onClick={() => setStatusFilter(filter.value)}
-                                        className={`rounded-full border px-4 py-2 text-sm font-bold transition ${isActive
-                                            ? 'border-primary bg-primary text-primary-foreground'
-                                            : 'border-border bg-background text-muted hover:border-primary/40 hover:text-foreground'
-                                            }`}
+                                        onClick={clearFilters}
+                                        className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10 xl:ml-auto"
                                     >
-                                        {filter.label}
+                                        <FiAlertCircle />
+                                        Clear filters
                                     </button>
-                                );
-                            })}
-
-                            {hasActiveFilters && (
-                                <button
-                                    type="button"
-                                    onClick={clearFilters}
-                                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10 xl:ml-auto"
-                                >
-                                    <FiAlertCircle />
-                                    Clear filters
-                                </button>
-                            )}
-                        </div>
+                                )
+                            }
+                        />
                     }
                 >
                     <SearchInput

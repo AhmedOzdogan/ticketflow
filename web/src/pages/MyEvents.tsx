@@ -9,6 +9,7 @@ import PageContainer from "../components/layout/PageContainer";
 import PageDashboard from "../components/ui/PageDashboard";
 import AppSelect from "../components/ui/AppSelect";
 import SearchInput from "../components/ui/SearchInput";
+import FilterChips from "../components/ui/FilterChips";
 import {
     FiCalendar,
     FiEye,
@@ -27,12 +28,12 @@ import Pagination from "../components/ui/Pagination";
 const PAGE_SIZE = 10;
 
 const statusOptions = [
-    { value: "all", label: "All Statuses" },
-    { value: "published", label: "Published" },
-    { value: "pending", label: "Pending" },
-    { value: "draft", label: "Draft" },
-    { value: "rejected", label: "Rejected" },
-    { value: "cancelled", label: "Cancelled" },
+    { value: "all", label: "All Statuses", icon: FiCalendar },
+    { value: "published", label: "Published", icon: FiCheckCircle },
+    { value: "pending", label: "Pending", icon: FiClock },
+    { value: "draft", label: "Draft", icon: FiFileText },
+    { value: "rejected", label: "Rejected", icon: FiXCircle },
+    { value: "cancelled", label: "Cancelled", icon: FiXCircle },
 ];
 
 const orderingOptions = [
@@ -167,6 +168,16 @@ function MyEvents() {
                     <PageDashboard
                         title="Event Dashboard"
                         description="View and manage all of your events."
+                        filters={
+                            <FilterChips
+                                value={statusFilter}
+                                options={statusOptions}
+                                onChange={(value) => {
+                                    setPage(1);
+                                    setStatusFilter(value);
+                                }}
+                            />
+                        }
                     >
                         <form
                             onSubmit={handleSearch}
@@ -180,15 +191,6 @@ function MyEvents() {
                         </form>
 
                         <div className="flex flex-col gap-3 md:flex-row">
-                            <AppSelect
-                                value={statusFilter}
-                                onChange={(value) => {
-                                    setPage(1);
-                                    setStatusFilter(value);
-                                }}
-                                options={statusOptions}
-                            />
-
                             <AppSelect
                                 value={ordering}
                                 onChange={(value) => {
