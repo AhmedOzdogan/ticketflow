@@ -2,7 +2,12 @@ from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from .models import Order, Ticket, TicketStatus, TicketType
+from .models import (
+    Order,
+    OrderItem,
+    Ticket,
+    OrderStatus,
+)
 from .serializers import (
     OrderCreateSerializer,
     OrderSerializer,
@@ -257,3 +262,39 @@ class CompletePaymentView(generics.UpdateAPIView):
                 "status": order.status,
             }
         )
+
+
+class CancelOrderView(generics.UpdateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "id"
+
+    queryset = Order.objects.all()
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        order = self.get_object()
+
+        if order.user != request.user:
+            raise PermissionDenied()
+
+        if order.status != OrderStatus.PENDING:
+            return Response(
+                {
+                    "detail": "Only pending orders can be cancelled."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        order.status = OrderStatus.CANCELLED
+        order.save(update_fields=["status"])
+
+        return Response(
+            {
+                "id": str(order.id),
+                "status": order.status,
+            }
+        )
+        
+    @transaction.atomic
+    def patch(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
