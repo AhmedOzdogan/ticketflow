@@ -19,6 +19,7 @@ class TicketFilter(django_filters.FilterSet):
     class Meta:
         model = Ticket
         fields = {
+            "id": ["exact"],
             "status": ["exact"],
             "event": ["exact"],
             "ticket_type": ["exact"],
