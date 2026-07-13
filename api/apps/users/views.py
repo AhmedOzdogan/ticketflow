@@ -26,7 +26,7 @@ from .serializers import (
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from .filters import UserFilter
-from .paginations import DefaultPagination
+from .paginations import DefaultPagination,UserPagination
 from rest_framework.filters import OrderingFilter
 
 
@@ -115,7 +115,7 @@ class UserListView(generics.ListAPIView):
     queryset = User.objects.select_related("organizer_profile").order_by("-created_at")
     serializer_class = UserListSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
-    pagination_class = DefaultPagination
+    pagination_class = UserPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = UserFilter
     search_fields = [
@@ -147,47 +147,3 @@ class OrganizerApprovalView(generics.UpdateAPIView):
 
 
 TokenRefresh = TokenRefreshView
-
-class UserStatsAPIView(APIView):
-    permission_classes = [IsAdmin]
-
-    def get(self, request):
-        data = {
-            "total_users": User.objects.count(),
-
-            "buyers": User.objects.filter(
-                role=UserRole.BUYER
-            ).count(),
-
-            "organizers": User.objects.filter(
-                role=UserRole.ORGANIZER
-            ).count(),
-
-            "admins": User.objects.filter(
-                role=UserRole.ADMIN
-            ).count(),
-
-            "pending_organizers": User.objects.filter(
-                organizer_approval_status=OrganizerApprovalStatus.PENDING
-            ).count(),
-
-            "approved_organizers": User.objects.filter(
-                organizer_approval_status=OrganizerApprovalStatus.APPROVED
-            ).count(),
-
-            "rejected_organizers": User.objects.filter(
-                organizer_approval_status=OrganizerApprovalStatus.REJECTED
-            ).count(),
-
-            "verified_users": User.objects.filter(
-                is_email_verified=True
-            ).count(),
-
-            "unverified_users": User.objects.filter(
-                is_email_verified=False
-            ).count(),
-        }
-
-        serializer = UserStatsSerializer(data)
-
-        return Response(serializer.data)
