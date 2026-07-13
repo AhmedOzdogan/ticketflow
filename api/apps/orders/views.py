@@ -21,7 +21,7 @@ from .filters import (
     OrderFilter,
     TicketFilter
 )
-from .paginations import DefaultPagination
+from .paginations import DefaultPagination,OrderPagination,TicketPagination
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
@@ -44,7 +44,7 @@ class OrderListView(generics.ListAPIView):
     ]
 
     filterset_class = OrderFilter
-    pagination_class = DefaultPagination
+    pagination_class = OrderPagination
 
     search_fields = [
         "event__title",
@@ -101,7 +101,7 @@ class TicketListView(generics.ListAPIView):
     ]
 
     filterset_class = TicketFilter
-    pagination_class = DefaultPagination
+    pagination_class = TicketPagination
 
     search_fields = [
         "event__title",
@@ -127,12 +127,17 @@ class TicketListView(generics.ListAPIView):
         )
 
         if user.role == "admin":
-            return queryset
+            pass
+        elif user.is_approved_organizer:
+            queryset = queryset.filter(event__organizer=user)
+        else:
+            queryset = queryset.filter(owner=user)
 
-        if user.is_approved_organizer:
-            return queryset.filter(event__organizer=user)
+        order_id = self.request.query_params.get("order")
+        if order_id:
+            queryset = queryset.filter(order_item__order_id=order_id)
 
-        return queryset.filter(owner=user)
+        return queryset
 
 
 class TicketDownloadView(generics.RetrieveAPIView):

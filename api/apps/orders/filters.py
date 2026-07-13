@@ -1,6 +1,6 @@
 import django_filters
 
-from .models import Order, Ticket
+from .models import Ticket, Order
 
 
 class OrderFilter(django_filters.FilterSet):
@@ -16,10 +16,13 @@ class OrderFilter(django_filters.FilterSet):
 
 
 class TicketFilter(django_filters.FilterSet):
+    order_id = django_filters.UUIDFilter(
+        field_name="order_item__order__id",
+    )
+
     class Meta:
         model = Ticket
         fields = {
-            "id": ["exact"],
             "status": ["exact"],
             "event": ["exact"],
             "ticket_type": ["exact"],
