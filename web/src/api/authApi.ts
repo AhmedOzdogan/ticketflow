@@ -117,3 +117,14 @@ export async function updateOrganizerStatus(
 
     return response.data;
 }
+
+export async function createCheckoutSession(orderId: string) {
+    const response = await api.post(
+        'http://localhost:5001/payment/create-checkout-session',
+        {
+            order_id: orderId,
+        },
+    );
+
+    return response.data;
+}

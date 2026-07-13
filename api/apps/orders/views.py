@@ -7,6 +7,7 @@ from .models import (
     OrderItem,
     Ticket,
     OrderStatus,
+    TicketStatus,
 )
 from .serializers import (
     OrderCreateSerializer,
@@ -27,6 +28,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
 from django.utils import timezone
 from .permissions import IsPaymentService
+from apps.events.models import TicketType
 
 class OrderCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -205,7 +207,8 @@ class PaymentOrderDetailView(generics.RetrieveAPIView):
 
 
 class CompletePaymentView(generics.UpdateAPIView):
-    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes=[]
+    permission_classes = [IsPaymentService]
     lookup_field = "id"
 
     queryset = (

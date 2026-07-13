@@ -20,6 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from "sonner";
 import { createOrder } from '../api/orderApi';
 import { Loading } from '../components/ui/Loading';
+import { createCheckoutSession } from '../api/authApi';
 
 
 const CheckoutPage = () => {
@@ -141,26 +142,10 @@ const CheckoutPage = () => {
                 items,
             });
 
-            const response = await fetch(
-                'http://localhost:5001/payment/create-checkout-session',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        order_id: order.id,
-                    }),
-                },
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to create Stripe checkout session.');
-            }
-
-            const checkout = await response.json();
+            const checkout = await createCheckoutSession(order.id);
 
             window.location.href = checkout.checkout_url;
+
         } catch (error) {
             console.error('Failed to create order:', error);
             toast.error('Could not create your order. Please try again.');
