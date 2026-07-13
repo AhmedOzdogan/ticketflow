@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import {
     FiCheckCircle,
     FiClock,
     FiRefreshCcw,
+    FiXCircle,
 } from 'react-icons/fi';
 import { TfiTicket } from "react-icons/tfi";
 import { toast } from 'sonner';
@@ -56,14 +57,8 @@ const orderingOptions = [
     },
 ];
 
-const initialData: TicketListResponse = {
-    count: 0,
-    next: null,
-    previous: null,
-    results: [],
-};
-
 export default function MyTickets() {
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
     const [searchParams] = useSearchParams();
@@ -72,9 +67,7 @@ export default function MyTickets() {
         searchParams.get('event') ?? undefined;
 
     const [ticketsData, setTicketsData] =
-        useState<TicketListResponse>(
-            initialData,
-        );
+        useState<TicketListResponse>();
 
     const [loading, setLoading] =
         useState(true);
@@ -131,6 +124,7 @@ export default function MyTickets() {
             }
 
             const params: GetTicketsParams = {
+                order_id: id,
                 page,
                 pageSize,
                 event: eventId,
@@ -162,10 +156,10 @@ export default function MyTickets() {
         }
     };
 
-
     useEffect(() => {
         void fetchTickets();
     }, [
+        id,
         page,
         debouncedSearch,
         status,
@@ -175,12 +169,12 @@ export default function MyTickets() {
     ]);
 
     const tickets =
-        ticketsData.results;
+        ticketsData?.results ?? [];
 
     const totalPages = Math.max(
         1,
         Math.ceil(
-            ticketsData.count / pageSize,
+            (ticketsData?.count ?? 0) / pageSize,
         ),
     );
 
@@ -190,7 +184,7 @@ export default function MyTickets() {
             { id: string; name: string }
         >();
 
-        tickets.forEach((ticket) => {
+        ticketsData?.results.forEach((ticket) => {
             unique.set(ticket.ticket_type_id, {
                 id: ticket.ticket_type_id,
                 name: ticket.ticket_type_name,
@@ -204,29 +198,6 @@ export default function MyTickets() {
             },
             ...Array.from(unique.values()),
         ];
-    }, [tickets]);
-
-    const statistics = useMemo(() => {
-        return {
-            total:
-                ticketsData.count,
-
-            active: tickets.filter(
-                (
-                    ticket,
-                ) =>
-                    ticket.status ===
-                    'active',
-            ).length,
-
-            used: tickets.filter(
-                (
-                    ticket,
-                ) =>
-                    ticket.status ===
-                    'used',
-            ).length,
-        };
     }, [ticketsData]);
 
     const handleDownloadTicket = async (
@@ -269,20 +240,32 @@ export default function MyTickets() {
     const stats = [
         {
             title: "Total Tickets",
-            value: statistics.total,
+            value: ticketsData?.stats.total ?? 0,
             icon: TfiTicket,
         },
         {
             title: "Active",
-            value: statistics.active,
+            value: ticketsData?.stats.active ?? 0,
             icon: FiCheckCircle,
             color: "text-green-600",
         },
         {
             title: "Used",
-            value: statistics.used,
+            value: ticketsData?.stats.used ?? 0,
             icon: FiClock,
             color: "text-yellow-600",
+        },
+        {
+            title: "Cancelled",
+            value: ticketsData?.stats.cancelled ?? 0,
+            icon: FiXCircle,
+            color: "text-red-600",
+        },
+        {
+            title: "Refunded",
+            value: ticketsData?.stats.refunded ?? 0,
+            icon: FiRefreshCcw,
+            color: "text-blue-600",
         },
     ];
 
@@ -341,7 +324,7 @@ export default function MyTickets() {
                     </div>
                 </PageDashboard>
 
-                <StatsGrid items={stats} columns={3} />
+                <StatsGrid items={stats} columns={5} />
 
                 <div className="mt-8">
                     {loading ? (

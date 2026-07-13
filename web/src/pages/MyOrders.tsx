@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     FiAlertCircle,
@@ -86,18 +86,13 @@ const orderingOptions = [
     },
 ];
 
-const initialResponse: OrderListResponse = {
-    count: 0,
-    next: null,
-    previous: null,
-    results: [],
-};
+
 
 export default function MyOrders() {
     const navigate = useNavigate();
 
     const [ordersData, setOrdersData] =
-        useState<OrderListResponse>(initialResponse);
+        useState<OrderListResponse>();
 
     const [search, setSearch] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -177,17 +172,21 @@ export default function MyOrders() {
 
             toast.success('Order cancelled successfully.');
 
-            setOrdersData((current) => ({
-                ...current,
-                results: current.results.map((order) =>
-                    order.id === orderId
-                        ? {
-                            ...order,
-                            status: 'cancelled',
-                        }
-                        : order,
-                ),
-            }));
+            setOrdersData((current) => {
+                if (!current) return current;
+
+                return {
+                    ...current,
+                    results: current.results.map((order) =>
+                        order.id === orderId
+                            ? {
+                                ...order,
+                                status: "cancelled",
+                            }
+                            : order,
+                    ),
+                };
+            });
         } catch (error) {
             console.error('Failed to cancel order:', error);
 
@@ -197,39 +196,13 @@ export default function MyOrders() {
         }
     };
 
-    const orders = ordersData.results;
+    const orders = ordersData?.results ?? [];
 
     const totalPages = Math.max(
         1,
-        Math.ceil(ordersData.count / pageSize),
+        Math.ceil((ordersData?.count ?? 0) / pageSize),
     );
 
-    const statistics = useMemo(() => {
-        return {
-            total: ordersData.count,
-
-            paid: orders.filter(
-                (order) => order.status === 'paid',
-            ).length,
-
-            pending: orders.filter(
-                (order) =>
-                    order.status === 'pending' ||
-                    order.status === 'processing',
-            ).length,
-
-            cancelled: orders.filter(
-                (order) =>
-                    order.status === 'cancelled' ||
-                    order.status === 'failed' ||
-                    order.status === 'expired',
-            ).length,
-
-            refunded: orders.filter(
-                (order) => order.status === 'refunded',
-            ).length,
-        };
-    }, [orders, ordersData.count]);
 
     const clearFilters = () => {
         setSearch('');
@@ -247,28 +220,55 @@ export default function MyOrders() {
     const stats = [
         {
             title: "Total Orders",
-            value: statistics.total,
+            value: ordersData?.stats.total ?? 0,
             icon: FiShoppingBag,
         },
         {
             title: "Paid",
-            value: statistics.paid,
+            value: ordersData?.stats.paid ?? 0,
             icon: FiCheckCircle,
             color: "text-green-600",
         },
         {
             title: "Pending",
-            value: statistics.pending,
+            value: ordersData?.stats.pending ?? 0,
             icon: FiClock,
             color: "text-yellow-600",
         },
         {
+            title: "Processing",
+            value: ordersData?.stats.processing ?? 0,
+            icon: FiRefreshCcw,
+            color: "text-indigo-600",
+        },
+        {
+            title: "Cancelled",
+            value: ordersData?.stats.cancelled ?? 0,
+            icon: FiXCircle,
+            color: "text-red-600",
+        },
+        {
+            title: "Failed",
+            value: ordersData?.stats.failed ?? 0,
+            icon: FiAlertCircle,
+            color: "text-orange-600",
+        },
+        {
+            title: "Expired",
+            value: ordersData?.stats.expired ?? 0,
+            icon: FiClock,
+            color: "text-slate-600",
+        },
+        {
             title: "Refunded",
-            value: statistics.refunded,
+            value: ordersData?.stats.refunded ?? 0,
             icon: FiCreditCard,
             color: "text-blue-600",
         },
     ];
+
+    console.log(ordersData)
+    console.log(orders)
     return (
         <>
             <PageContainer
@@ -328,14 +328,14 @@ export default function MyOrders() {
                     </div>
                 </PageDashboard>
 
-                <StatsGrid items={stats} />
+                <StatsGrid items={stats} columns={4} />
 
                 <div className="mt-8">
                     {isLoading ? (
                         <div className="rounded-2xl border border-border bg-surface p-16 text-center shadow-sm">
                             <Loading />
                         </div>
-                    ) : orders.length === 0 ? (
+                    ) : ordersData?.results.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-border bg-surface p-16 text-center shadow-sm">
                             <span className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary">
                                 <FiPackage size={34} />

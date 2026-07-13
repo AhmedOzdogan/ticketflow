@@ -1,17 +1,36 @@
 export type OrderStatus =
-    | 'pending'
-    | 'processing'
-    | 'paid'
-    | 'failed'
-    | 'cancelled'
-    | 'expired'
-    | 'refunded';
+    | "pending"
+    | "processing"
+    | "paid"
+    | "failed"
+    | "cancelled"
+    | "expired"
+    | "refunded";
 
 export type TicketStatus =
-    | 'active'
-    | 'used'
-    | 'cancelled'
-    | 'refunded';
+    | "active"
+    | "used"
+    | "cancelled"
+    | "refunded";
+
+export interface OrderStats {
+    total: number;
+    pending: number;
+    processing: number;
+    paid: number;
+    failed: number;
+    cancelled: number;
+    expired: number;
+    refunded: number;
+}
+
+export interface TicketStats {
+    total: number;
+    active: number;
+    used: number;
+    cancelled: number;
+    refunded: number;
+}
 
 export interface OrderItemCreate {
     ticket_type: string;
@@ -62,15 +81,23 @@ export interface Ticket {
     created_at: string;
 }
 
-export interface PaginatedResponse<T> {
+export interface PaginatedResponse<T, S = unknown> {
     count: number;
     next: string | null;
     previous: string | null;
+    stats: S;
     results: T[];
 }
 
-export type OrderListResponse = PaginatedResponse<Order>;
-export type TicketListResponse = PaginatedResponse<Ticket>;
+export type OrderListResponse = PaginatedResponse<
+    Order,
+    OrderStats
+>;
+
+export type TicketListResponse = PaginatedResponse<
+    Ticket,
+    TicketStats
+>;
 
 export interface GetOrdersParams {
     page?: number;
@@ -88,6 +115,7 @@ export interface GetOrdersParams {
 }
 
 export interface GetTicketsParams {
+    order_id?: string;
     page?: number;
     pageSize?: number;
     search?: string;

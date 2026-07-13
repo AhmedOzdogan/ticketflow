@@ -76,6 +76,7 @@ export async function getTickets(
         '/v1/orders/tickets/',
         {
             params: {
+                order_id: params.order_id,
                 page: params.page,
                 page_size: params.pageSize,
                 search: params.search,
