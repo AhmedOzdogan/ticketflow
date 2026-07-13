@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getMyEvents } from "../api/eventApi";
-import type { EventListItem } from "../types/events";
+import type { EventListPaginatedResponse } from "../types/events";
 import { getApiErrorMessage } from "../utils/getApiErrorMessages";
 import { Button } from "../components/ui/Button";
 import PageContainer from "../components/layout/PageContainer";
@@ -49,8 +49,8 @@ const orderingOptions = [
 function MyEvents() {
     const navigate = useNavigate();
 
-    const [events, setEvents] = useState<EventListItem[]>([]);
-    const [count, setCount] = useState(0);
+    const [events, setEvents] =
+        useState<EventListPaginatedResponse | null>(null);
 
     const [page, setPage] = useState(1);
     const [searchInput, setSearchInput] = useState("");
@@ -60,7 +60,10 @@ function MyEvents() {
 
     const [isLoading, setIsLoading] = useState(true);
 
-    const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
+    const totalPages = Math.max(
+        1,
+        Math.ceil((events?.count ?? 0) / PAGE_SIZE),
+    );;
 
     useEffect(() => {
         async function loadEvents() {
@@ -74,11 +77,9 @@ function MyEvents() {
                     ordering,
                 });
                 await new Promise((resolve) => setTimeout(resolve, 500));
-                setEvents(data.results);
-                setCount(data.count);
+                setEvents(data);
             } catch (error) {
-                setEvents([]);
-                setCount(0);
+                setEvents(null);
                 toast.error(getApiErrorMessage(error));
             } finally {
                 setIsLoading(false);
@@ -89,34 +90,16 @@ function MyEvents() {
     }, [page, search, ordering]);
 
     const visibleEvents = useMemo(() => {
+        const results = events?.results ?? [];
+
         if (statusFilter === "all") {
-            return events;
+            return results;
         }
 
-        return events.filter(
-            (event) => event.status.toLowerCase() === statusFilter,
+        return results.filter(
+            (event) => event.status === statusFilter,
         );
     }, [events, statusFilter]);
-
-    const publishedCount = useMemo(
-        () => events.filter((event) => event.status === "published").length,
-        [events],
-    );
-
-    const draftCount = useMemo(
-        () => events.filter((event) => event.status === "draft").length,
-        [events],
-    );
-
-    const rejectedCount = useMemo(
-        () =>
-            events.filter(
-                (event) =>
-                    event.status === "rejected" ||
-                    event.status === "cancelled",
-            ).length,
-        [events],
-    );
 
     function handleSearch(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -162,26 +145,38 @@ function MyEvents() {
     const stats = [
         {
             title: "Total Events",
-            value: count,
+            value: events?.stats.total ?? 0,
             icon: FiCalendar,
         },
         {
             title: "Published",
-            value: publishedCount,
+            value: events?.stats.published ?? 0,
             icon: FiCheckCircle,
             color: "text-green-600",
         },
         {
             title: "Draft",
-            value: draftCount,
-            icon: FiClock,
-            color: "text-yellow-600",
+            value: events?.stats.draft ?? 0,
+            icon: FiEdit,
+            color: "text-slate-600",
         },
         {
-            title: "Rejected",
-            value: rejectedCount,
+            title: "Pending",
+            value: events?.stats.pending ?? 0,
+            icon: FiClock,
+            color: "text-amber-600",
+        },
+        {
+            title: "Cancelled",
+            value: events?.stats.cancelled ?? 0,
             icon: FiXCircle,
             color: "text-red-600",
+        },
+        {
+            title: "Completed",
+            value: events?.stats.completed ?? 0,
+            icon: FiCheckCircle,
+            color: "text-blue-600",
         },
     ];
 
@@ -239,7 +234,7 @@ function MyEvents() {
                         </div>
                     </PageDashboard>
 
-                    <StatsGrid items={stats} />
+                    <StatsGrid items={stats} columns={6} />
 
                     {isLoading ? (
                         <div className="rounded-2xl border bg-white py-20 text-center shadow-sm">
@@ -399,9 +394,9 @@ function MyEvents() {
                                                     </div>
 
                                                     {/* Footer */}
-                                                    <div className="mt-8 flex flex-col gap-6 border-t pt-6 lg:flex-row lg:items-center lg:justify-between">
-                                                        <div className="flex flex-wrap gap-4 w-full sm:w-auto">
-                                                            <div className="min-w-32 w-full rounded-xl border bg-slate-50 px-4 py-3 sm:w-auto">
+                                                    <div className="mt-8 grid gap-5 border-t pt-6 xl:grid-cols-[auto_minmax(180px,220px)_minmax(320px,1fr)] xl:items-stretch">
+                                                        <div className="grid w-full grid-cols-2 gap-4 xl:w-auto items-center justify-center">
+                                                            <div className="flex h-20 flex-col items-center justify-center rounded-2xl border bg-slate-50 px-5 py-4 text-center">
                                                                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                                                                     Ticket Types
                                                                 </p>
@@ -411,7 +406,7 @@ function MyEvents() {
                                                                 </p>
                                                             </div>
 
-                                                            <div className="min-w-32 w-full rounded-xl border bg-slate-50 px-4 py-3 sm:w-auto">
+                                                            <div className="flex h-20 flex-col items-center justify-center rounded-2xl border bg-slate-50 px-5 py-4 text-center">
                                                                 <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                                                                     Status
                                                                 </p>
@@ -429,10 +424,11 @@ function MyEvents() {
                                                             </div>
                                                         </div>
 
-                                                        <div className="flex flex-col gap-3 sm:flex-row">
+                                                        <div className="contents">
                                                             <Button
                                                                 variant="outline"
                                                                 size="lg"
+                                                                className="h-14 w-30 self-center rounded-2xl text-lg xl:w-[200px]"
                                                                 onClick={() =>
                                                                     navigate(`/organizer/events/preview/${event.id}`)
                                                                 }
@@ -444,6 +440,7 @@ function MyEvents() {
                                                             {event.status === "draft" ? (
                                                                 <Button
                                                                     size="lg"
+                                                                    className="lg:min-w-[180px]"
                                                                     onClick={() =>
                                                                         navigate(`/organizer/edit-event/${event.id}`)
                                                                     }
@@ -452,7 +449,7 @@ function MyEvents() {
                                                                     Edit Event
                                                                 </Button>
                                                             ) : event.status === "pending" ? (
-                                                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                                                <div className="flex min-h-32 flex-col justify-center rounded-2xl border border-amber-200 bg-amber-50 px-7 py-5 text-center text-sm text-amber-800 xl:text-left">
                                                                     <p className="font-semibold">
                                                                         Review in progress
                                                                     </p>
@@ -463,7 +460,7 @@ function MyEvents() {
                                                                     </p>
                                                                 </div>
                                                             ) : event.status === "published" ? (
-                                                                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                                                                <div className="flex min-h-20 flex-col justify-center rounded-2xl border border-green-200 bg-green-50 px-7 py-5 text-center text-sm text-green-800 xl:text-left">
                                                                     <p className="font-semibold">
                                                                         Your event is live 🎉
                                                                     </p>
@@ -474,7 +471,7 @@ function MyEvents() {
                                                                     </p>
                                                                 </div>
                                                             ) : event.status === "cancelled" ? (
-                                                                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                                                                <div className="flex min-h-32 flex-col justify-center rounded-2xl border border-red-200 bg-red-50 px-7 py-5 text-center text-sm text-red-800 xl:text-left">
                                                                     <p className="font-semibold">
                                                                         Event cancelled
                                                                     </p>
@@ -484,7 +481,7 @@ function MyEvents() {
                                                                     </p>
                                                                 </div>
                                                             ) : event.status === "completed" ? (
-                                                                <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                                                                <div className="flex min-h-32 flex-col justify-center rounded-2xl border border-blue-200 bg-blue-50 px-7 py-5 text-center text-sm text-blue-800 xl:text-left">
                                                                     <p className="font-semibold">
                                                                         Event completed
                                                                     </p>

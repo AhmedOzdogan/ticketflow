@@ -1,8 +1,18 @@
-export interface PaginatedResponse<T> {
+export interface PaginatedResponse<T, S = undefined> {
     count: number;
     next: string | null;
     previous: string | null;
+    stats: S;
     results: T[];
+}
+
+export interface EventStats {
+    total: number;
+    draft: number;
+    pending: number;
+    published: number;
+    cancelled: number;
+    completed: number;
 }
 
 export interface EventListItem {
@@ -48,9 +58,15 @@ export type EventListPublicItem = Omit<
     ticket_types: PublicTicketType[];
 };
 
-export type EventListPaginatedResponse = PaginatedResponse<EventListItem>;
+export type EventListPaginatedResponse = PaginatedResponse<
+    EventListItem,
+    EventStats
+>;
 
-export type PublicEventListPaginatedResponse = PaginatedResponse<EventListPublicItem>;
+export type PublicEventListPaginatedResponse = PaginatedResponse<
+    EventListPublicItem,
+    EventStats
+>;
 
 export type TicketInput = Omit<TicketType, "id" | "remaining_quantity">;
 
@@ -72,6 +88,7 @@ export interface CreateEvent {
     end_date: string;
     ticket_types: TicketInput[];
 }
+
 export type UpdateEvent = Partial<
     Omit<CreateEvent, "ticket_types" | "cover_image">
 > & {
