@@ -1,5 +1,4 @@
 import { api } from './client';
-import axios from 'axios';
 
 import type {
     CreateOrderRequest,
@@ -110,7 +109,7 @@ export async function scanTicket(
 export async function downloadTicket(
     ticketId: string,
 ): Promise<Blob> {
-    const response = await axios.get<Blob>(
+    const response = await api.get(
         `http://localhost:5001/api/tickets/${ticketId}/pdf`,
         {
             responseType: 'blob',
