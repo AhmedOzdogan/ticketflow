@@ -35,11 +35,6 @@ export async function getCurrentUser() {
     return response.data;
 }
 
-export async function getStats() {
-    const response = await api.get('/v1/users/stats/')
-    return response.data;
-
-}
 export async function refreshTokenRequest(refresh: string): Promise<RefreshTokenResponse> {
     const response = await api.post<RefreshTokenResponse>('/v1/users/token/refresh/', { refresh });
     return response.data;

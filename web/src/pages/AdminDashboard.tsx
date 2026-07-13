@@ -1,5 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { getStats, getUsers, updateOrganizerStatus } from '../api/authApi';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
+import { getUsers, updateOrganizerStatus } from '../api/authApi';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import AdminLayout from '../components/admin/AdminLayout';
@@ -7,68 +12,21 @@ import AdminToolbar from '../components/admin/AdminToolbar';
 import AdminTable from '../components/admin/AdminTable';
 import StatusBadge from '../components/admin/StatusBadge';
 import type { AdminMenuItem } from '../components/admin/AdminSidebar';
+import type { User, PaginatedResponse, OrganizerStatusState } from '../types/user';
+import Pagination from '../components/ui/Pagination';
 
 type ApprovalStatus = 'approved' | 'pending' | 'rejected';
 type FilterStatus = 'all' | ApprovalStatus;
 type AdminView = 'buyers' | 'organizers' | 'admins';
 
-
-interface OrganizerProfile {
-    company_name: string;
-    website_url: string;
-    organizer_details: string;
-    rejection_reason: string | null;
-}
-
-interface User {
-    id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    phone_number: string;
-    organizer_approval_status: ApprovalStatus;
-    organizer_profile: OrganizerProfile | null;
-}
-
-interface PaginatedResponse<T> {
-    count: number;
-    next: string | null;
-    previous: string | null;
-    results: T[];
-}
-
-interface OrganizerStatusState {
-    status: ApprovalStatus;
-    rejectionReason: string;
-}
-
-interface UserStats {
-    total_users: number;
-    buyers: number;
-    organizers: number;
-    admins: number;
-    pending_organizers: number;
-    approved_organizers: number;
-    rejected_organizers: number;
-    verified_users: number;
-    unverified_users: number;
-}
-
 const AdminDashboard: React.FC = () => {
     const { user } = useAuth();
-    const [organizers, setOrganizers] = useState<PaginatedResponse<User>>({
-        count: 0,
-        next: null,
-        previous: null,
-        results: [],
-    });
+    const [users, setUsers] = useState<PaginatedResponse<User>>();
     const [loading, setLoading] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [stats, setStats] = useState<UserStats | null>(null);
     const [statusState, setStatusState] = useState<Record<string, OrganizerStatusState>>({});
     const [filter, setFilter] = useState<FilterStatus>('all');
-
     const [activeView, setActiveView] = useState<AdminView>('organizers');
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -109,14 +67,12 @@ const AdminDashboard: React.FC = () => {
 
             try {
                 const data = await getUsers(options);
-
-                setOrganizers(data);
-
+                setUsers(data);
                 const initialStatusState: Record<string, OrganizerStatusState> = {};
 
                 data.results.forEach((user: User) => {
                     initialStatusState[user.id] = {
-                        status: user.organizer_approval_status,
+                        organizer_approval_status: user.organizer_approval_status,
                         rejectionReason:
                             user.organizer_profile?.rejection_reason ?? '',
                     };
@@ -155,34 +111,22 @@ const AdminDashboard: React.FC = () => {
     }, [activeView, searchQuery, filter]);
 
     const filteredOrganizers = useMemo(
-        () => organizers.results,
-        [organizers],
+        () => users?.results,
+        [users],
 
     );
 
-    const fetchStats = useCallback(async () => {
-        try {
-            const data = await getStats();
-            setStats(data);
-        } catch (error) {
-            console.error(error);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (user?.role === 'admin') {
-            void fetchStats();
-        }
-    }, [fetchStats, user?.role]);
-
-    const totalPages = Math.max(1, Math.ceil(organizers.count / PAGE_SIZE));
+    const totalPages = Math.max(
+        1,
+        Math.ceil((users?.count ?? 0) / PAGE_SIZE),
+    );
 
     const handleStatusChange = (id: string, value: ApprovalStatus) => {
         setStatusState((prev) => ({
             ...prev,
             [id]: {
                 ...prev[id],
-                status: value,
+                organizer_approval_status: value,
                 rejectionReason: value === 'rejected' ? prev[id]?.rejectionReason ?? '' : '',
             },
         }));
@@ -228,7 +172,6 @@ const AdminDashboard: React.FC = () => {
                         ? filter
                         : undefined,
             });
-            await fetchStats();
         } catch (error) {
             console.error(error);
             setErrorMessage('Could not update organizer status. Please try again.');
@@ -240,14 +183,32 @@ const AdminDashboard: React.FC = () => {
     return (
         <AdminLayout
             title="Admin Management"
-            subtitle="Review and manage organizer users."
+            subtitle={
+                activeView === 'organizers'
+                    ? 'Review and manage organizer users.'
+                    : activeView === 'buyers'
+                        ? 'Review and manage buyer accounts.'
+                        : 'Review and manage administrator accounts.'
+            }
             activeMenu={activeView}
             adminEmail={user!.email}
             menuItems={adminMenu}
             toolbar={
                 <AdminToolbar
-                    title="Organizer Applications"
-                    description="Showing organizer accounts from the user list."
+                    title={
+                        activeView === 'organizers'
+                            ? 'Organizer Applications'
+                            : activeView === 'buyers'
+                                ? 'Buyer Accounts'
+                                : 'Administrator Accounts'
+                    }
+                    description={
+                        activeView === 'organizers'
+                            ? 'Review and manage organizer applications.'
+                            : activeView === 'buyers'
+                                ? 'Manage registered buyers.'
+                                : 'Manage administrator accounts.'
+                    }
                 >
                     <div className="mt-3 flex w-full flex-col gap-3 sm:mt-0 lg:w-auto lg:flex-row lg:items-center">
                         <div className="w-full lg:w-72">
@@ -283,7 +244,7 @@ const AdminDashboard: React.FC = () => {
                                     }`}
                                 onClick={() => setFilter('all')}
                             >
-                                All ({stats?.organizers})
+                                All ({users?.stats?.organizers.total})
                             </Button>
                             {activeView === 'organizers' && (
                                 <>
@@ -295,7 +256,7 @@ const AdminDashboard: React.FC = () => {
                                             }`}
                                         onClick={() => setFilter('pending')}
                                     >
-                                        Pending ({stats?.pending_organizers})
+                                        Pending ({users?.stats?.organizers.pending})
                                     </Button>
                                     <Button
                                         variant="ghost"
@@ -305,7 +266,7 @@ const AdminDashboard: React.FC = () => {
                                             }`}
                                         onClick={() => setFilter('approved')}
                                     >
-                                        Approved ({stats?.approved_organizers})
+                                        Approved ({users?.stats?.organizers.pending})
                                     </Button>
                                     <Button
                                         variant="ghost"
@@ -315,7 +276,7 @@ const AdminDashboard: React.FC = () => {
                                             }`}
                                         onClick={() => setFilter('rejected')}
                                     >
-                                        Rejected ({stats?.rejected_organizers})
+                                        Rejected ({users?.stats?.organizers.rejected})
                                     </Button>
                                 </>
                             )}
@@ -329,40 +290,52 @@ const AdminDashboard: React.FC = () => {
                     {errorMessage}
                 </div>
             )}
-            {stats && (
+            {user && (
                 <div className="mb-6 grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
                     <div className="border border-border bg-surface p-4">
                         <div className="text-sm text-muted-foreground"> Total Users</div>
-                        <div className="mt-2 text-3xl font-bold">{stats.total_users}</div>
+                        <div className="mt-2 text-3xl font-bold">{users?.stats.total}</div>
                     </div>
 
                     <div className="border border-border bg-surface p-4">
                         <div className="text-sm text-muted-foreground">Buyers</div>
-                        <div className="mt-2 text-3xl font-bold">{stats.buyers}</div>
+                        <div className="mt-2 text-3xl font-bold">{users?.stats.buyers}</div>
                     </div>
 
                     <div className="border border-border bg-surface p-4">
                         <div className="text-sm text-muted-foreground">Organizers</div>
-                        <div className="mt-2 text-3xl font-bold">{stats.organizers}</div>
+                        <div className="mt-2 text-3xl font-bold">{users?.stats.organizers.total}</div>
 
                         <div className="mt-2 text-xs text-muted-foreground">
-                            {stats.pending_organizers} Pending •{" "}
-                            {stats.approved_organizers} Approved •{" "}
-                            {stats.rejected_organizers} Rejected
+                            {users?.stats.organizers.pending} Pending •{" "}
+                            {users?.stats.organizers.approved} Approved •{" "}
+                            {users?.stats.organizers.rejected} Rejected
                         </div>
                     </div>
 
                     <div className="border border-border bg-surface p-4">
                         <div className="text-sm text-muted-foreground">Admins</div>
-                        <div className="mt-2 text-3xl font-bold">{stats.admins}</div>
+                        <div className="mt-2 text-3xl font-bold">{users?.stats.admins}</div>
                     </div>
                 </div>
             )}
             <AdminTable
                 loading={loading}
-                empty={!loading && filteredOrganizers.length === 0}
-                emptyTitle="No organizers found"
-                emptyDescription="There are no organizers matching the selected filter."
+                empty={!loading && filteredOrganizers?.length === 0}
+                emptyTitle={
+                    activeView === 'organizers'
+                        ? 'No organizers found'
+                        : activeView === 'buyers'
+                            ? 'No buyers found'
+                            : 'No administrators found'
+                }
+                emptyDescription={
+                    activeView === 'organizers'
+                        ? 'There are no organizers matching the selected filter.'
+                        : activeView === 'buyers'
+                            ? 'There are no buyers matching the selected filter.'
+                            : 'There are no administrators matching the selected filter.'
+                }
             >
                 <div className="overflow-x-auto">
                     <table className="min-w-full border-collapse bg-white text-sm">
@@ -394,9 +367,14 @@ const AdminDashboard: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredOrganizers.map((org, idx) => {
-                                const selectedStatus = statusState[org.id]?.status ?? org.organizer_approval_status;
-                                const rejectionReason = statusState[org.id]?.rejectionReason ?? '';
+                            {filteredOrganizers?.map((org, idx) => {
+                                const selectedStatus: ApprovalStatus =
+                                    (statusState[org.id]?.organizer_approval_status ??
+                                        org.organizer_approval_status) as ApprovalStatus;
+
+                                const rejectionReason =
+                                    statusState[org.id]?.rejectionReason ?? '';
+
                                 const isUpdating = updatingId === org.id;
                                 return (
                                     <tr
@@ -493,41 +471,15 @@ const AdminDashboard: React.FC = () => {
 
             <div className="mt-4 flex flex-col gap-3 border border-border bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages} • {organizers.count} total users
+                    Page {currentPage} of {totalPages} • {users?.stats.total} total users
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                    <Button
-                        variant="ghost"
-                        className="rounded-none border border-border"
-                        disabled={currentPage === 1}
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    >
-                        Previous
-                    </Button>
+                <Pagination
+                    page={currentPage}
+                    totalPages={totalPages}
+                    loading={loading}
+                    onPageChange={setCurrentPage} />
 
-                    {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .slice(Math.max(0, currentPage - 3), Math.max(5, currentPage + 2))
-                        .map((page) => (
-                            <Button
-                                key={page}
-                                variant="ghost"
-                                className={page === currentPage ? 'rounded-none border border-muted bg-muted text-primary-foreground' : 'rounded-none border border-border'}
-                                onClick={() => setCurrentPage(page)}
-                            >
-                                {page}
-                            </Button>
-                        ))}
-
-                    <Button
-                        variant="ghost"
-                        className="rounded-none border border-border"
-                        disabled={currentPage >= totalPages}
-                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    >
-                        Next
-                    </Button>
-                </div>
             </div>
         </AdminLayout>
     );
