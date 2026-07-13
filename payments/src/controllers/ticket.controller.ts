@@ -1,25 +1,59 @@
-// controllers/ticket.controller.ts
+import { AxiosError } from 'axios';
 
-import { Request, Response } from 'express';
-import { generateTicketPdf } from '../services/pdf.service';
+import type { Request, Response } from 'express';
+
+import { getTicket } from '../services/django.service.js';
+import { generateTicketPdf } from '../services/pdf.service.js';
 
 export async function downloadTicket(
-    req: Request<{ ticketId: string | string[] }>,
+    req: Request<{ ticketId: string }>,
     res: Response,
 ) {
-    console.log(req.params.ticketId);
-    const ticketId = Array.isArray(req.params.ticketId)
-        ? req.params.ticketId[0]
-        : req.params.ticketId;
+    const { ticketId } = req.params;
+    const authorization = req.headers.authorization!;
 
-    const pdf = await generateTicketPdf(ticketId);
+    try {
+        const ticket = await getTicket(
+            ticketId,
+            authorization,
+        );
 
-    console.log(pdf.length);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-        'Content-Disposition',
-        `attachment; filename=ticket-${ticketId}.pdf`,
-    );
+        const pdf = await generateTicketPdf(ticket);
 
-    res.send(pdf);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="ticket-${ticket.id}.pdf"`,
+        );
+
+        return res.send(pdf);
+    } catch (error) {
+        if (error instanceof AxiosError && error.response) {
+            if (error.response.status === 404) {
+                return res.status(404).json({
+                    message: 'Ticket not found.',
+                });
+            }
+
+            if (error.response.status === 401) {
+                return res.status(401).json({
+                    message: 'Invalid or expired token.',
+                });
+            }
+
+            if (error.response.status === 403) {
+                return res.status(403).json({
+                    message: 'You are not allowed to download this ticket.',
+                });
+            }
+
+            return res.status(error.response.status).json({
+                message: 'Unable to download ticket.',
+            });
+        }
+
+        return res.status(503).json({
+            message: 'Ticket service is unavailable.',
+        });
+    }
 }

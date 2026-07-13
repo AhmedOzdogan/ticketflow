@@ -1,10 +1,15 @@
-import { getOrder } from './django.service';
-import stripe from "../config/stripe"
+import stripe from '../config/stripe.js';
+
+import { getOrder } from './django.service.js';
 
 export async function createStripeCheckoutSession(
     orderId: string,
+    accessToken: string,
 ) {
-    const order = await getOrder(orderId);
+    const order = await getOrder(
+        orderId,
+        accessToken,
+    );
 
     if (order.status !== 'pending') {
         throw new Error('Order is no longer pending.');

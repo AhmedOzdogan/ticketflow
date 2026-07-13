@@ -22,7 +22,6 @@ export const stripeWebhook = async (
             process.env.STRIPE_WEBHOOK_SECRET as string,
         );
     } catch (error) {
-        console.error(error);
 
         return res.status(400).send('Invalid webhook signature.');
     }
@@ -31,23 +30,27 @@ export const stripeWebhook = async (
         case 'checkout.session.completed': {
             const session = event.data.object as Stripe.Checkout.Session;
 
-            console.log(
-                'Checkout completed:',
-                session.metadata?.order_id,
-            );
-
-            const orderId = session.metadata?.order_id;
-
-            if (!orderId) {
+            if (!session.metadata?.order_id) {
                 return res.status(400).send('Missing order ID.');
             }
 
-            await completeOrder(
-                orderId,
-                session.id,
-                session.payment_intent as string,
-            );
+            const orderId = session.metadata?.order_id;
 
+            if (typeof session.payment_intent !== 'string') {
+
+                return res.status(400).send('Missing payment intent.');
+
+            }
+
+            try {
+                await completeOrder(
+                    orderId,
+                    session.id,
+                    session.payment_intent,
+                );
+            } catch (error) {
+                return res.status(500).send('Failed to complete order.');
+            }
             break;
         }
 

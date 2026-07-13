@@ -1,30 +1,33 @@
 import axios from 'axios';
 import QRCode from 'qrcode';
-
-import { getTicket } from './django.service';
 import sharp from 'sharp';
 
 import {
     PDFDocument,
     StandardFonts,
-    rgb,
-    pushGraphicsState,
-    popGraphicsState,
-} from 'pdf-lib';
-
-import {
-    rectangle,
     clip,
     endPath,
+    popGraphicsState,
+    pushGraphicsState,
+    rectangle,
+    rgb,
 } from 'pdf-lib';
 
+type TicketPdfData = {
+    id: string;
+    qr_code: string;
+    status: string;
+    owner_name: string;
+    event_title: string;
+    event_cover_image: string;
+    ticket_type_name: string;
+    created_at: string;
+};
+
 export async function generateTicketPdf(
-    ticketId: string,
+    ticket: TicketPdfData,
 ): Promise<Uint8Array> {
-    const ticket = await getTicket(ticketId);
-
     const pdf = await PDFDocument.create();
-
     const page = pdf.addPage([900, 400]);
 
     const { width, height } = page.getSize();
@@ -76,79 +79,55 @@ export async function generateTicketPdf(
         );
 
         const imageBuffer = Buffer.from(imageResponse.data);
-
         const pngBuffer = await sharp(imageBuffer)
             .png()
             .toBuffer();
 
-        let coverImage = await pdf.embedPng(pngBuffer);
+        const coverImage = await pdf.embedPng(pngBuffer);
 
-        const imageUrl =
-            ticket.event_cover_image.toLowerCase();
+        const containerX = 20;
+        const containerY = 20;
+        const containerWidth = coverWidth;
+        const containerHeight = height - 40;
 
-        if (imageUrl.endsWith('.png')) {
-            coverImage = await pdf.embedPng(
-                imageResponse.data,
-            );
-        } else if (
-            imageUrl.endsWith('.jpg') ||
-            imageUrl.endsWith('.jpeg')
-        ) {
-            coverImage = await pdf.embedJpg(
-                imageResponse.data,
-            );
-        }
+        const imageDimensions = coverImage.scale(1);
 
-        if (coverImage) {
-            const containerX = 20;
-            const containerY = 20;
-            const containerWidth = coverWidth;
-            const containerHeight = height - 40;
+        const scale = Math.max(
+            containerWidth / imageDimensions.width,
+            containerHeight / imageDimensions.height,
+        );
 
-            const imageDimensions = coverImage.scale(1);
+        const imageWidth = imageDimensions.width * scale;
+        const imageHeight = imageDimensions.height * scale;
 
-            // Cover behaviour
-            const scale = Math.max(
-                containerWidth / imageDimensions.width,
-                containerHeight / imageDimensions.height,
-            );
+        const imageX =
+            containerX +
+            (containerWidth - imageWidth) / 2;
 
-            const imageWidth =
-                imageDimensions.width * scale;
+        const imageY =
+            containerY +
+            (containerHeight - imageHeight) / 2;
 
-            const imageHeight =
-                imageDimensions.height * scale;
+        page.pushOperators(
+            pushGraphicsState(),
+            rectangle(
+                containerX,
+                containerY,
+                containerWidth,
+                containerHeight,
+            ),
+            clip(),
+            endPath(),
+        );
 
-            const imageX =
-                containerX +
-                (containerWidth - imageWidth) / 2;
+        page.drawImage(coverImage, {
+            x: imageX,
+            y: imageY,
+            width: imageWidth,
+            height: imageHeight,
+        });
 
-            const imageY =
-                containerY +
-                (containerHeight - imageHeight) / 2;
-
-            // Clip everything outside the cover area
-            page.pushOperators(
-                pushGraphicsState(),
-                rectangle(
-                    containerX,
-                    containerY,
-                    containerWidth,
-                    containerHeight,
-                ),
-                clip(),
-                endPath(),
-            );
-
-            page.drawImage(coverImage, {
-                x: imageX,
-                y: imageY,
-                width: imageWidth,
-                height: imageHeight,
-            });
-
-            page.pushOperators(popGraphicsState());
-        }
+        page.pushOperators(popGraphicsState());
     } catch {
         page.drawRectangle({
             x: 20,
@@ -199,8 +178,7 @@ export async function generateTicketPdf(
         },
     );
 
-    const statusText =
-        ticket.status.toUpperCase();
+    const statusText = ticket.status.toUpperCase();
 
     const statusWidth =
         titleFont.widthOfTextAtSize(
@@ -247,9 +225,8 @@ export async function generateTicketPdf(
         color: borderColor,
     });
 
-    const infoX = contentStartX;
-    const labelX = infoX;
-    const valueX = infoX + 95;
+    const labelX = contentStartX;
+    const valueX = contentStartX + 95;
 
     const drawInfoRow = (
         label: string,
@@ -270,8 +247,7 @@ export async function generateTicketPdf(
             size: 13,
             font: titleFont,
             color: rgb(0.06, 0.06, 0.06),
-            maxWidth:
-                qrPanelX - valueX - 25,
+            maxWidth: qrPanelX - valueX - 25,
         });
     };
 
@@ -283,9 +259,7 @@ export async function generateTicketPdf(
 
     drawInfoRow(
         'PURCHASED',
-        new Date(
-            ticket.created_at,
-        ).toLocaleDateString(),
+        new Date(ticket.created_at).toLocaleDateString(),
         height - 210,
     );
 
@@ -295,14 +269,13 @@ export async function generateTicketPdf(
         height - 250,
     );
 
-    const qrDataUrl =
-        await QRCode.toDataURL(
-            ticket.qr_code,
-            {
-                margin: 1,
-                width: 260,
-            },
-        );
+    const qrDataUrl = await QRCode.toDataURL(
+        ticket.qr_code,
+        {
+            margin: 1,
+            width: 260,
+        },
+    );
 
     const qrBytes = Buffer.from(
         qrDataUrl.replace(
@@ -312,9 +285,7 @@ export async function generateTicketPdf(
         'base64',
     );
 
-    const qrImage = await pdf.embedPng(
-        qrBytes,
-    );
+    const qrImage = await pdf.embedPng(qrBytes);
 
     page.drawRectangle({
         x: qrPanelX,

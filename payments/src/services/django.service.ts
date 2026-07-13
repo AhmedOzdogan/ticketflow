@@ -1,7 +1,7 @@
 import '../config/env';
 import axios from 'axios';
 
-const djangoApi = axios.create({
+const serviceApi = axios.create({
     baseURL: process.env.DJANGO_API,
     headers: {
         Authorization: `Bearer ${process.env.DJANGO_API_TOKEN}`,
@@ -9,9 +9,24 @@ const djangoApi = axios.create({
     },
 });
 
-export async function getOrder(orderId: string) {
-    const response = await djangoApi.get(
+const userApi = axios.create({
+    baseURL: process.env.DJANGO_API,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+export async function getOrder(
+    orderId: string,
+    accessToken: string,
+) {
+    const response = await userApi.get(
         `/orders/payments/${orderId}/`,
+        {
+            headers: {
+                Authorization: accessToken,
+            },
+        },
     );
 
     return response.data;
@@ -22,7 +37,7 @@ export async function completeOrder(
     stripeCheckoutSessionId: string,
     stripePaymentIntentId: string,
 ) {
-    const response = await djangoApi.patch(
+    const response = await serviceApi.patch(
         `/orders/payments/${orderId}/complete/`,
         {
             stripe_checkout_session_id: stripeCheckoutSessionId,
@@ -35,9 +50,15 @@ export async function completeOrder(
 
 export async function getTicket(
     ticketId: string,
+    accessToken: string,
 ) {
-    const response = await djangoApi.get(
+    const response = await userApi.get(
         `/orders/tickets/${ticketId}/download/`,
+        {
+            headers: {
+                Authorization: accessToken,
+            },
+        },
     );
 
     return response.data;
