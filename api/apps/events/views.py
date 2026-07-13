@@ -16,7 +16,7 @@ from rest_framework.filters import SearchFilter
 from .filters import (
     EventFilter,
     TicketTypeFilter)
-from .paginations import DefaultPagination
+from .paginations import DefaultPagination, EventPagination
 from rest_framework.filters import OrderingFilter
 
 
@@ -73,7 +73,7 @@ class EventListManageView(generics.ListAPIView):
         OrderingFilter,
     ]
     filterset_class = EventFilter
-    pagination_class = DefaultPagination
+    pagination_class = EventPagination
     search_fields = [
         "title",
         "description",
