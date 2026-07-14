@@ -36,6 +36,7 @@ from drf_spectacular.utils import (
     extend_schema_view,
 )
 from rest_framework import status
+from django.core.cache import cache
 
 
 @extend_schema(
@@ -328,7 +329,7 @@ class CompletePaymentView(generics.UpdateAPIView):
                 status=409,
             )
 
-        order.status = "paid"
+        order.status = OrderStatus.PAID
         order.paid_at = timezone.now()
         order.stripe_checkout_session_id = request.data.get(
             "stripe_checkout_session_id"
@@ -337,6 +338,8 @@ class CompletePaymentView(generics.UpdateAPIView):
             "stripe_payment_intent_id"
         )
         order.save()
+
+        cache.delete(f"reservation:{order.id}")
 
         for item in order.items.select_related("ticket_type"):
             ticket_type = TicketType.objects.select_for_update().get(
@@ -413,6 +416,7 @@ class CancelOrderView(generics.UpdateAPIView):
 
         order.status = OrderStatus.CANCELLED
         order.save(update_fields=["status"])
+        cache.delete(f"reservation:{order.id}")
 
         return Response(
             {

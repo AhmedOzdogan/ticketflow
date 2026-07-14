@@ -96,7 +96,28 @@ services:
     depends_on:
       api:
         condition: service_healthy
-
+  order-cleanup:
+    build:
+      context: ./api
+    container_name: ticketflow-order-cleanup
+    restart: unless-stopped
+    command: >
+      sh -c "
+      while true;
+      do
+        python manage.py cleanup_expired_orders;
+        sleep 60;
+      done
+      "
+    volumes:
+      - ./api:/app
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 volumes:
   ticketflow-postgres-data:
   ticketflow-redis-data:

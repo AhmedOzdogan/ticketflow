@@ -12,6 +12,8 @@ from apps.orders.models import (
     Ticket,
     TicketStatus,
 )
+from django.core.cache import cache
+
 
 class OrderItemSerializer(serializers.ModelSerializer):
     ticket_type_id = serializers.UUIDField(
@@ -83,6 +85,21 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             "currency",
             "created_at",
         ]
+    @staticmethod
+    def get_reserved_quantity(ticket_type_id) -> int:
+        reserved_quantity = 0
+
+        for reservation_key in cache.iter_keys("reservation:*"):
+            reservation = cache.get(reservation_key)
+
+            if not reservation:
+                continue
+
+            for item in reservation.get("items", []):
+                if item["ticket_type_id"] == str(ticket_type_id):
+                    reserved_quantity += int(item["quantity"])
+
+        return reserved_quantity
 
     def validate_items(self, items):
         if not items:
@@ -129,13 +146,20 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                         )
                     }
                 )
-
-            if quantity > ticket_type.remaining_quantity:
+            
+            reserved_quantity = self.get_reserved_quantity(
+            ticket_type.id
+            )
+            available = max(
+                ticket_type.remaining_quantity - reserved_quantity,
+                0,
+            )
+            if quantity > available:
                 raise serializers.ValidationError(
                     {
                         "items": (
-                            f'Only {ticket_type.remaining_quantity} tickets '
-                            f'are available for "{ticket_type}".'
+                            f'Only {available} tickets are currently '
+                            f'available for "{ticket_type}".'
                         )
                     }
                 )
@@ -147,73 +171,111 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         request = self.context["request"]
         items_data = validated_data.pop("items")
 
-        ticket_type_ids = [
-            item["ticket_type"].id
-            for item in items_data
-        ]
 
-        locked_ticket_types = {
-            ticket_type.id: ticket_type
-            for ticket_type in TicketType.objects.select_for_update().filter(
-                id__in=ticket_type_ids
-            )
-        }
+        event = validated_data["event"]
 
-        total_price = Decimal("0.00")
+        lock = cache.lock(
+            f"reservation-lock:{event.id}",
+            timeout=10,
+            blocking_timeout=5,
+        )
 
-        for item in items_data:
-            original_ticket_type = item["ticket_type"]
-            quantity = item["quantity"]
+        with lock:
+            ticket_type_ids = [
+                item["ticket_type"].id
+                for item in items_data
+            ]
 
-            ticket_type = locked_ticket_types.get(
-                original_ticket_type.id
-            )
+            locked_ticket_types = {
+                ticket_type.id: ticket_type
+                for ticket_type in TicketType.objects.select_for_update().filter(
+                    id__in=ticket_type_ids
+                )
+            }
 
-            if ticket_type is None:
-                raise serializers.ValidationError(
-                    "One of the selected ticket types no longer exists."
+            total_price = Decimal("0.00")
+
+            for item in items_data:
+                original_ticket_type = item["ticket_type"]
+                quantity = item["quantity"]
+
+                ticket_type = locked_ticket_types.get(
+                    original_ticket_type.id
                 )
 
-            if ticket_type.event_id != validated_data["event"].id:
-                raise serializers.ValidationError(
-                    "One of the selected ticket types does not belong "
-                    "to this event."
+                if ticket_type is None:
+                    raise serializers.ValidationError(
+                        "One of the selected ticket types no longer exists."
+                    )
+
+                if ticket_type.event_id != validated_data["event"].id:
+                    raise serializers.ValidationError(
+                        "One of the selected ticket types does not belong "
+                        "to this event."
+                    )
+
+                reserved_quantity = self.get_reserved_quantity(
+                ticket_type.id
                 )
 
-            if quantity > ticket_type.remaining_quantity:
-                raise serializers.ValidationError(
-                    (
-                        f'Only {ticket_type.remaining_quantity} tickets '
-                        f'are available for "{ticket_type}".'
+                available = max(
+                    ticket_type.remaining_quantity - reserved_quantity,
+                    0,
+                )
+
+                if quantity > available:
+                    raise serializers.ValidationError(
+                        {
+                            "items": (
+                                f'Only {available} tickets are currently '
+                                f'available for "{ticket_type}".'
+                            )
+                        }
+                    )
+
+                total_price += ticket_type.price * quantity
+
+            order = Order.objects.create(
+                user=request.user,
+                total_price=total_price,
+                status=OrderStatus.PENDING,
+                **validated_data,
+            )
+
+            order_items = []
+
+            for item in items_data:
+                ticket_type = locked_ticket_types[item["ticket_type"].id]
+
+                order_items.append(
+                    OrderItem(
+                        order=order,
+                        ticket_type=ticket_type,
+                        quantity=item["quantity"],
+                        unit_price=ticket_type.price,
                     )
                 )
 
-            total_price += ticket_type.price * quantity
+            OrderItem.objects.bulk_create(order_items)
 
-        order = Order.objects.create(
-            user=request.user,
-            total_price=total_price,
-            status=OrderStatus.PENDING,
-            **validated_data,
-        )
-
-        order_items = []
-
-        for item in items_data:
-            ticket_type = locked_ticket_types[item["ticket_type"].id]
-
-            order_items.append(
-                OrderItem(
-                    order=order,
-                    ticket_type=ticket_type,
-                    quantity=item["quantity"],
-                    unit_price=ticket_type.price,
-                )
+            cache.set(
+                f"reservation:{order.id}",
+                {
+                    "order_id": str(order.id),
+                    "user_id": str(request.user.id),
+                    "event_id": str(order.event_id),
+                    "items": [
+                        {
+                            "ticket_type_id": str(item["ticket_type"].id),
+                            "quantity": item["quantity"],
+                        }
+                        for item in items_data
+                    ],
+                },
+                timeout=600,
             )
 
-        OrderItem.objects.bulk_create(order_items)
-
-        return order
+            return order
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(

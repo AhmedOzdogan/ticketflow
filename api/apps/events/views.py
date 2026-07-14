@@ -126,6 +126,31 @@ class EventDetailView(generics.RetrieveAPIView):
                 timeout=300,
             )
 
+        reservations = []
+
+        for reservation_key in cache.iter_keys("reservation:*"):
+            reservation = cache.get(reservation_key)
+            if reservation:
+                reservations.append(reservation)
+
+        for ticket_type in event.ticket_types.all():
+            reserved_quantity = 0
+            for reservation in reservations:
+                for item in reservation.get("items", []):
+                    if (
+                        item["ticket_type_id"]
+                        == str(ticket_type.id)
+                    ):
+                        reserved_quantity += int(
+                            item["quantity"]
+                        )
+
+            ticket_type.remaining_quantity = max(
+                ticket_type.remaining_quantity
+                - reserved_quantity,
+                0,
+            )
+
         return event
 
 @extend_schema(
