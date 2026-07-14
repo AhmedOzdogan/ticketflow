@@ -78,7 +78,7 @@ export function ThemeToggle() {
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="size-15 p-0 sm:h-11 sm:w-auto sm:px-4 sm:py-2"
+            className="size-15 p-0 sm:h-16 sm:w-auto sm:px-4 sm:py-2"
         >
             <span className="relative flex size-6 items-center justify-center sm:size-4">
                 {theme === 'dark' ? (
