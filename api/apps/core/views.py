@@ -151,3 +151,94 @@ class HealthCheckView(APIView):
                 else status.HTTP_503_SERVICE_UNAVAILABLE
             ),
         )
+
+
+@extend_schema(
+    tags=["System"],
+    summary="Get API information",
+    description=(
+        "Returns basic TicketFlow API information and links to the health "
+        "endpoint, OpenAPI schema, Swagger UI, and ReDoc documentation."
+    ),
+    responses={
+        200: OpenApiResponse(
+            description="API information returned successfully.",
+            response={
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "TicketFlow API",
+                    },
+
+                    "version": {
+                        "type": "string",
+                        "example": "1.0.0",
+                    },
+
+                    "health": {
+                        "type": "string",
+                        "format": "uri",
+                        "example": "http://127.0.0.1:8000/api/v1/health/",
+
+                    },
+
+                    "openapi_schema": {
+
+                        "type": "string",
+
+                        "format": "uri",
+
+                        "example": "http://127.0.0.1:8000/api/schema/",
+
+                    },
+
+                    "swagger": {
+                        "type": "string",
+                        "format": "uri",
+                        "example": "http://127.0.0.1:8000/api/schema/swagger/",
+
+                    },
+
+                    "redoc": {
+                        "type": "string",
+                        "format": "uri",
+                        "example": "http://127.0.0.1:8000/api/schema/redoc/",
+                    },
+                },
+
+                "required": [
+                    "name",
+                    "version",
+                    "health",
+                    "openapi_schema",
+                    "swagger",
+                    "redoc",
+                ],
+            },
+        ),
+    },
+)
+class ApiInfoView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        return Response(
+            {
+                "name": "TicketFlow API",
+                "version": "1.0.0",
+                "health": request.build_absolute_uri(
+                    "/api/v1/health/"
+                ),
+                "openapi_schema": request.build_absolute_uri(
+                    "/api/schema/"
+                ),
+                "swagger": request.build_absolute_uri(
+                    "/api/schema/swagger/"
+                ),
+                "redoc": request.build_absolute_uri(
+                    "/api/schema/redoc/"
+                ),
+            }
+        )
