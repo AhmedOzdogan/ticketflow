@@ -146,6 +146,7 @@ SPECTACULAR_SETTINGS = {
         {"name": "Tickets"},
         {"name": "Users"},
         {"name": "Admin"},
+        {"name": "Health"},
     ],
 
     "SECURITY": [
