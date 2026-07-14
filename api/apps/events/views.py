@@ -80,7 +80,7 @@ class EventListView(generics.ListAPIView):
         cache.set(
             cache_key,
             response.data,
-            timeout=60,
+            timeout=300,
         )
         return response
 
@@ -123,7 +123,7 @@ class EventDetailView(generics.RetrieveAPIView):
             cache.set(
                 cache_key,
                 event,
-                timeout=60,
+                timeout=300,
             )
 
         return event
