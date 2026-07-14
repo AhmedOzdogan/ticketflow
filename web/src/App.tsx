@@ -18,6 +18,7 @@ const MyOrders = lazy(() => import('./pages/MyOrders'));
 const MyTickets = lazy(() => import('./pages/MyTickets'));
 const PaymentSuccessPage = lazy(() => import('./pages/PaymentSuccessPage'));
 const PaymentFailedPage = lazy(() => import('./pages/PaymentFailedPage'));
+const OrganizerScanner = lazy(() => import('./pages/OrganizerScanner'));
 
 import { Loading } from './components/ui/Loading';
 import { RequireRole } from './components/auth/RequireRole';
@@ -64,6 +65,10 @@ function App() {
           <Route
             path="/organizer/events/preview/:id"
             element={<EventDetailPage />}
+          />
+          <Route
+            path="/organizer/scan"
+            element={<OrganizerScanner />}
           />
         </Route>
 

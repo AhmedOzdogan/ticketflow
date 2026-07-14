@@ -98,9 +98,8 @@ export async function getTickets(
 export async function scanTicket(
     qrCode: string,
 ): Promise<Ticket> {
-    const response = await api.patch<Ticket>(
+    const response = await api.put<Ticket>(
         `/v1/orders/tickets/${qrCode}/scan/`,
-        {},
     );
 
     return response.data;
