@@ -263,3 +263,17 @@ class UserStatsSerializer(serializers.Serializer):
 
     verified_users = serializers.IntegerField()
     unverified_users = serializers.IntegerField()
+
+class AuthResponseSerializer(serializers.Serializer):
+    access = serializers.CharField()
+    refresh = serializers.CharField()
+    user = UserMeSerializer()
+
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+class TokenRefreshResponseSerializer(serializers.Serializer):
+    access = serializers.CharField()
+
+class DetailSerializer(serializers.Serializer):
+    detail = serializers.CharField()

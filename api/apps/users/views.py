@@ -21,6 +21,10 @@ from .serializers import (
     UserUpdateSerializer,
     UserListSerializer,
     UserStatsSerializer,
+    AuthResponseSerializer,
+    LogoutSerializer,
+    TokenRefreshResponseSerializer,
+    DetailSerializer,
 )
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -28,8 +32,23 @@ from rest_framework.filters import SearchFilter
 from .filters import UserFilter
 from .paginations import DefaultPagination,UserPagination
 from rest_framework.filters import OrderingFilter
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    OpenApiResponse,
+)
 
 
+@extend_schema(
+    tags=["Authentication"],
+    summary="Register a new user",
+    description="Creates a new user account and returns JWT access and refresh tokens together with the authenticated user's information.",
+    request=RegisterSerializer,
+    responses={
+        201: AuthResponseSerializer,
+        400: OpenApiResponse(description="Invalid registration data."),
+    },
+)
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
@@ -50,6 +69,16 @@ class RegisterView(generics.CreateAPIView):
         )
 
 
+@extend_schema(
+    tags=["Authentication"],
+    summary="Login",
+    description="Authenticates a user and returns JWT access and refresh tokens.",
+    request=LoginSerializer,
+    responses={
+        200: AuthResponseSerializer,
+        400: OpenApiResponse(description="Invalid email or password."),
+    },
+)
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -69,6 +98,17 @@ class LoginView(APIView):
         )
 
 
+@extend_schema(
+    tags=["Authentication"],
+    summary="Logout",
+    description="Invalidates the provided refresh token by adding it to the blacklist.",
+    request=LogoutSerializer,
+    responses={
+        205: None,
+        400: OpenApiResponse(description="Invalid or missing refresh token."),
+        401: OpenApiResponse(description="Authentication credentials were not provided."),
+    },
+)
 class LogoutView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -86,6 +126,52 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
 
+@extend_schema_view(
+
+    get=extend_schema(
+        tags=["Users"],
+        summary="Get current user",
+        description="Returns the authenticated user's profile.",
+        responses={
+            200: UserMeSerializer,
+            401: OpenApiResponse(
+                description="Authentication required."
+            ),
+        },
+    ),
+
+    put=extend_schema(
+        tags=["Users"],
+        summary="Replace current user profile",
+        description="Replaces the authenticated user's editable profile information.",
+        request=UserUpdateSerializer,
+        responses={
+            200: UserUpdateSerializer,
+            400: OpenApiResponse(
+                description="Invalid profile data."
+            ),
+            401: OpenApiResponse(
+                description="Authentication required."
+            ),
+        },
+    ),
+
+    patch=extend_schema(
+        tags=["Users"],
+        summary="Update current user profile",
+        description="Partially updates the authenticated user's profile information.",
+        request=UserUpdateSerializer,
+        responses={
+            200: UserUpdateSerializer,
+            400: OpenApiResponse(
+                description="Invalid profile data."
+            ),
+            401: OpenApiResponse(
+                description="Authentication required."
+            ),
+        },
+    ),
+)
 class MeView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -98,6 +184,17 @@ class MeView(generics.RetrieveUpdateAPIView):
         return UserMeSerializer
 
 
+@extend_schema(
+    tags=["Users"],
+    summary="Change password",
+    description="Changes the authenticated user's password.",
+    request=ChangePasswordSerializer,
+    responses={
+        200: DetailSerializer,
+        400: DetailSerializer,
+        401: DetailSerializer,
+    },
+)
 class ChangePasswordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -111,6 +208,16 @@ class ChangePasswordView(APIView):
         return Response({"detail": "Password changed successfully."}, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    tags=["Admin"],
+    summary="List users",
+    description="Returns a paginated list of users. Accessible only to administrators.",
+    responses={
+        200: UserListSerializer,
+        401: OpenApiResponse(description="Authentication required."),
+        403: OpenApiResponse(description="Administrator access required."),
+    },
+)
 class UserListView(generics.ListAPIView):
     queryset = User.objects.select_related("organizer_profile").order_by("-created_at")
     serializer_class = UserListSerializer
@@ -135,15 +242,38 @@ class UserListView(generics.ListAPIView):
     "last_name",
     "role",
 
-]
+    ]
 
-ordering = ["-created_at"]
+    ordering = ["-created_at"]
 
 
+@extend_schema(
+    tags=["Admin"],
+    summary="Approve or reject organizer",
+    description="Updates an organizer's approval status. Accessible only to administrators.",
+    request=OrganizerApprovalSerializer,
+    responses={
+        200: OrganizerApprovalSerializer,
+        400: OpenApiResponse(description="Invalid approval request."),
+        401: OpenApiResponse(description="Authentication required."),
+        403: OpenApiResponse(description="Administrator access required."),
+        404: OpenApiResponse(description="Organizer not found."),
+    },
+)
 class OrganizerApprovalView(generics.UpdateAPIView):
     queryset = User.objects.filter(role="organizer")
     serializer_class = OrganizerApprovalSerializer
     permission_classes = [permissions.IsAuthenticated, IsAdmin]
 
 
-TokenRefresh = TokenRefreshView
+@extend_schema(
+    tags=["Authentication"],
+    summary="Refresh access token",
+    description="Generates a new JWT access token using a valid refresh token.",
+    responses={
+        200: TokenRefreshResponseSerializer,
+        401: OpenApiResponse(description="Invalid or expired refresh token."),
+    },
+)
+class TokenRefresh(TokenRefreshView):
+    permission_classes = [permissions.AllowAny]
