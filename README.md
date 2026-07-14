@@ -329,3 +329,4 @@ TicketFlow's next evolution can expand its operational depth while preserving th
 ---
 
 Explore the platform by running the [Quick start](#quick-start), then use the [component documentation](#documentation) to follow the part of the system most relevant to you.
+
