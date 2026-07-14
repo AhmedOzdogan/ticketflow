@@ -1,1063 +1,484 @@
-# 💳 TicketFlow Payments Service
+# TicketFlow Payments Service
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Node.js-22.x-339933?logo=node.js&logoColor=white" />
-  <img src="https://img.shields.io/badge/Express-5.x-black?logo=express" />
-  <img src="https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe&logoColor=white" />
-  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white" />
-  <img src="https://img.shields.io/badge/License-MIT-success" />
+  <strong>Stripe Checkout, verified payment completion, and downloadable event tickets for the TicketFlow platform.</strong>
 </p>
 
----
+<p align="center">
+  <img alt="Node.js 22" src="https://img.shields.io/badge/Node.js-22-339933?logo=nodedotjs&logoColor=white">
+  <img alt="Express 5" src="https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&logoColor=white">
+  <img alt="Stripe" src="https://img.shields.io/badge/Stripe-Checkout-635BFF?logo=stripe&logoColor=white">
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white">
+</p>
 
-# 📖 Overview
+TicketFlow Payments is a focused Express.js service at the boundary between the TicketFlow application, Stripe, and the Django domain API. It creates card-payment Checkout Sessions from server-validated orders, accepts signed Stripe events, records successful payments through a privileged backend channel, and produces personalized PDF tickets for authenticated buyers.
 
-The **TicketFlow Payments Service** is a standalone Express.js microservice responsible for handling all payment-related functionality within the TicketFlow platform.
+## Table of contents
 
-Rather than embedding Stripe logic directly inside the Django backend, payments are isolated into a dedicated service responsible for:
+- [Overview](#overview)
+- [Project metrics](#project-metrics)
+- [Responsibilities](#responsibilities)
+- [Features](#features)
+- [Tech stack](#tech-stack)
+- [Architecture](#architecture)
+- [Project structure](#project-structure)
+- [Payment flow](#payment-flow)
+- [Stripe integration](#stripe-integration)
+- [Security model](#security-model)
+- [API overview](#api-overview)
+- [Environment variables](#environment-variables)
+- [Local development](#local-development)
+- [Docker](#docker)
+- [Error handling](#error-handling)
+- [Engineering decisions](#engineering-decisions)
+- [Future improvements](#future-improvements)
+- [Portfolio value](#portfolio-value)
 
-- 💳 Creating Stripe Checkout Sessions
-- 🎟️ Generating downloadable PDF tickets
-- 🔐 Authenticating and authorizing payment requests
-- 🔄 Processing Stripe Webhooks
-- 🤝 Communicating securely with the Django API
-
-This architecture keeps business logic inside Django while allowing the payment service to focus exclusively on Stripe integration and document generation.
-
----
-
-# ✨ Features
-
-## 💳 Payments
-
-- Stripe Checkout integration
-- Card payments
-- Pending order validation
-- Secure payment session creation
-- Payment completion through Stripe Webhooks
-
----
-
-## 🎟 Ticket Management
-
-- Download printable PDF tickets
-- QR Code generation
-- Event cover image embedding
-- Automatic PDF generation
-- Owner verification before download
-
----
-
-## 🔐 Authentication
-
-Protected endpoints use JWT authentication through the Django backend.
-
-Features include:
-
-- Buyer authentication
-- Role-based authorization
-- Verified email requirement
-- Ownership validation
-- Internal service authentication
-
----
-
-## 🔄 Service Communication
-
-The payment service communicates with Django using two different authentication mechanisms.
-
-### User Authentication
-
-Used whenever a logged-in user performs an action.
-
-```
-Frontend
-      │
-JWT
-      ▼
-Payments API
-      │
-Bearer Token
-      ▼
-Django API
+```mermaid
+flowchart LR
+    Customer([Customer]) --> Web[React frontend]
+    Web -->|Bearer token| Payments[Express payments service]
+    Payments -->|Validate order or ticket| Django[Django API]
+    Payments -->|Create Checkout Session| Stripe[Stripe Checkout]
+    Stripe -->|Signed webhook| Payments
+    Payments -->|Service token: complete order| Django
+    Django --> DB[(Application database)]
 ```
 
----
+## Overview
 
-### Internal Service Authentication
+The Django API remains the source of truth for users, orders, ticket ownership, and payment state. This service owns the integration-heavy edge of the workflow: translating an approved order into Stripe line items, verifying Stripe's webhook signature against the untouched request body, and sending Stripe identifiers back to Django after Checkout completes.
 
-Used for trusted server-to-server operations.
+Keeping these concerns in a dedicated process limits the reach of Stripe credentials, prevents payment-provider code from leaking into the core domain API, and gives webhook and document-generation workloads an independent deployment boundary. Communication with Django uses the customer's bearer token for user-scoped reads and a separate service token for the webhook-driven order completion call.
 
+## Project metrics
+
+These figures are calculated from the current `src/` tree and mounted Express routes.
+
+| Surface | Count | What it represents |
+|---|---:|---|
+| API endpoints | 4 | Health, Checkout creation, Stripe webhook, ticket PDF download |
+| Route modules | 3 | Payment, webhook, and ticket routing |
+| Controllers | 3 | One HTTP controller per route module |
+| Service modules | 3 | Stripe orchestration, Django communication, PDF rendering |
+| Middleware modules | 1 | Django-backed authentication and authorization |
+| External API integrations | 2 | Stripe and the TicketFlow Django API |
+| Container definitions | 1 | Node.js 22 Alpine `Dockerfile` |
+
+## Responsibilities
+
+- Authenticate buyers through Django's `/users/me` endpoint and require a verified email address.
+- Retrieve the requested order from Django using the caller's authorization header.
+- Reject orders whose status is no longer `pending`.
+- Build one Stripe Checkout line item per order item and return the hosted Checkout URL.
+- Verify Stripe webhook signatures and handle `checkout.session.completed` events.
+- Send the Checkout Session ID and Payment Intent ID to Django to complete the order.
+- Retrieve an authorized buyer's ticket and render it as a downloadable PDF with a QR code.
+- Expose a small health response at `GET /`.
+
+## Features
+
+### Stripe Checkout
+
+`POST /payment/create-checkout-session` accepts an `order_id`, obtains the canonical order from Django, and creates a one-time, card-only Checkout Session. Prices are converted from major currency units to Stripe's integer minor units, while the currency and quantities come from the validated order.
+
+The session carries the order ID in both `client_reference_id` and `metadata.order_id`. The API returns only the values the frontend needs to continue:
+
+```json
+{
+  "checkout_url": "https://checkout.stripe.com/...",
+  "session_id": "cs_test_..."
+}
 ```
-Stripe
-     │
-Webhook
-     ▼
-Payments API
-     │
-Service Token
-     ▼
-Django API
+
+Checkout redirects are currently configured for the local frontend:
+
+- Success: `http://localhost:5173/payment/success?session_id={CHECKOUT_SESSION_ID}`
+- Cancellation: `http://localhost:5173/payment/failed`
+
+### Webhook processing and order synchronization
+
+The webhook route is registered before the global JSON parser and receives `express.raw()` request bodies, as required for Stripe signature verification. For `checkout.session.completed`, the handler requires both `metadata.order_id` and a string Payment Intent ID before patching the corresponding Django order.
+
+Other Stripe event types are acknowledged and logged without changing application state. A Django synchronization failure returns `500`, allowing Stripe to treat delivery as unsuccessful and retry according to its webhook delivery policy.
+
+### Payment validation
+
+Checkout creation is protected for users with the `buyer` role. The middleware forwards the bearer token to Django, checks the resolved role and email-verification state, and the payment service then asks Django for the user-scoped order. Django's `400`, `401`, `403`, and `404` responses are translated into stable client-facing errors. A non-pending order is rejected with `409 Conflict`.
+
+### Downloadable tickets
+
+`GET /api/tickets/:ticketId/pdf` retrieves a buyer-authorized ticket from Django and creates a landscape PDF in memory. The document includes:
+
+- Event cover artwork, converted to PNG with Sharp
+- Event and ticket-type details
+- Owner, purchase date, ticket ID, and current status
+- A QR code generated from the ticket's `qr_code` value
+- A neutral cover placeholder if the remote event image cannot be loaded
+
+The response is sent as `application/pdf` with an attachment filename based on the ticket ID.
+
+### Docker support
+
+The included image uses Node.js 22 Alpine, installs the locked application dependencies, exposes port `5001`, and starts the TypeScript service through the development script.
+
+### Developer experience
+
+The codebase uses strict TypeScript with NodeNext module resolution and an ES2022 target. Routes, controllers, middleware, integrations, and shared types have explicit homes, keeping changes localized as the service grows. `tsx` executes TypeScript directly: `npm run dev` adds file watching, while `npm start` runs once without watch mode.
+
+Configuration is environment-based, and Docker provides the same Node.js 22 Alpine runtime on any host. There is currently no test script, production build script, or startup-time environment validation; those gaps remain visible in the roadmap rather than being implied as existing tooling.
+
+## Tech stack
+
+| Technology | Role |
+|---|---|
+| Node.js 22 | Container runtime |
+| Express 5 | HTTP routing, middleware, raw webhook body handling |
+| TypeScript | Strictly typed service implementation |
+| Stripe SDK | Checkout Session creation and webhook verification |
+| Axios | User-scoped and service-scoped Django API clients |
+| pdf-lib | In-memory PDF composition |
+| QRCode | Ticket QR image generation |
+| Sharp | Event artwork normalization for PDF embedding |
+| dotenv | Local environment loading |
+| CORS | Browser-origin policy |
+| tsx | TypeScript execution and development watch mode |
+| Docker | Reproducible Node.js 22 runtime |
+
+## Architecture
+
+There are two deliberately different trust paths:
+
+| Path | Credential | Used for |
+|---|---|---|
+| User-scoped | Incoming `Authorization: Bearer …` header | Identity lookup, order validation, ticket retrieval |
+| Service-scoped | `DJANGO_API_TOKEN` | Webhook-driven order completion |
+
+```mermaid
+flowchart TB
+    subgraph Browser
+        Customer([Customer]) --> React[React frontend]
+    end
+
+    subgraph PaymentBoundary[Payments service]
+        Auth[Authentication middleware]
+        Checkout[Checkout controller]
+        Hook[Webhook controller]
+        Ticket[Ticket PDF controller]
+    end
+
+    React -->|Bearer token| Auth
+    Auth --> Checkout
+    Auth --> Ticket
+    Checkout -->|User token: read order| Django[Django API]
+    Ticket -->|User token: read ticket| Django
+    Checkout -->|Secret API key| Stripe[Stripe]
+    Stripe -->|Signature + raw payload| Hook
+    Hook -->|Service token: complete order| Django
+    Django --> DB[(Database)]
 ```
 
-This separation prevents exposing privileged service credentials while still allowing authenticated users to access their own resources.
+This split preserves Django's domain authority while containing provider credentials and webhook-specific parsing in a smaller service. The user/service credential separation also prevents a browser token from gaining access to the internal completion operation.
 
----
-
-# 🏗 Architecture
+## Project structure
 
 ```text
-                    +-------------------+
-                    |   React Frontend  |
-                    +---------+---------+
-                              |
-                         JWT Authentication
-                              |
-                              ▼
-                    +-------------------+
-                    | Payments Service  |
-                    | Express + Stripe  |
-                    +----+---------+----+
-                         |         |
-                         |         |
-               Stripe API|         |Django API
-                         |         |
-                         ▼         ▼
-            +-----------------+  +----------------+
-            |     Stripe      |  | Django Backend |
-            +-----------------+  +----------------+
+src/
+├── config/       # Environment loading and the Stripe client
+├── controllers/  # HTTP responses for checkout, webhooks, and PDFs
+├── middlewares/  # Django-backed authentication and authorization
+├── routes/       # Public route definitions and middleware composition
+├── services/     # Stripe, Django, image, QR, and PDF integrations
+├── types/        # Shared authenticated-user shape
+├── app.ts        # CORS, body parsing, health route, and route mounting
+└── server.ts     # Port selection and HTTP listener
 ```
 
----
+| Area | Responsibility | Collaboration boundary |
+|---|---|---|
+| `config/` | Loads `.env` values and constructs the shared Stripe client. | Supplies credentials and provider configuration to service and webhook code. |
+| `routes/` | Declares paths and composes middleware with controllers. | Keeps URL structure separate from request handling. |
+| `middlewares/` | Resolves the caller through Django, attaches `req.user`, checks role membership, and requires verified email. | Runs before buyer-only payment and ticket controllers. |
+| `controllers/` | Validates HTTP input, delegates work, maps failures, and formats responses. | Depends on services rather than embedding Stripe, Django, or PDF workflows. |
+| `services/` | Creates Checkout Sessions, calls Django through user/service clients, and renders ticket PDFs. | Contains provider-facing and document-generation logic behind controller functions. |
+| `types/` | Defines the authenticated user shape added to Express requests. | Shares the Django identity contract with authentication middleware. |
+| `app.ts` | Configures CORS and parsers, preserves the raw webhook body, mounts routes, and exposes the root status response. | Establishes middleware order for the whole service. |
+| `server.ts` | Selects `PORT` and starts the HTTP listener. | Keeps process startup separate from Express application assembly. |
 
-# 🛠 Tech Stack
+A request moves from route to middleware to controller, then into the relevant service. The controllers remain thin: Stripe orchestration lives in `stripe.service.ts`, Django communication in `django.service.ts`, and document rendering in `pdf.service.ts`. This direction keeps Express concerns at the edge and prevents provider SDK details from spreading across the application.
 
-| Technology | Purpose |
-|------------|---------|
-| TypeScript | Type Safety |
-| Express.js | REST API |
-| Stripe SDK | Payment Processing |
-| Axios | Django Communication |
-| PDF-Lib | PDF Generation |
-| QRCode | QR Code Creation |
-| Sharp | Image Processing |
-| Docker | Containerization |
+## Payment flow
 
----
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer
+    participant Web as React frontend
+    participant Pay as Express payments service
+    participant API as Django API
+    participant Stripe as Stripe Checkout
+    participant DB as Application database
 
-# 📁 Project Structure
-
-```
-payments/
-│
-├── src/
-│   ├── config/
-│   │      stripe.ts
-│   │      env.ts
-│   │
-│   ├── controllers/
-│   │      payment.controller.ts
-│   │      ticket.controller.ts
-│   │      webhook.controller.ts
-│   │
-│   ├── middlewares/
-│   │      requireAuth.ts
-│   │
-│   ├── routes/
-│   │      payment.routes.ts
-│   │      ticket.routes.ts
-│   │      webhook.routes.ts
-│   │
-│   ├── services/
-│   │      django.service.ts
-│   │      stripe.service.ts
-│   │      pdf.service.ts
-│   │
-│   ├── types/
-│   │
-│   ├── app.ts
-│   └── server.ts
-│
-├── Dockerfile
-├── package.json
-└── README.md
+    Customer->>Web: Start payment for an existing order
+    Web->>Pay: POST /payment/create-checkout-session<br/>Bearer token + order_id
+    Pay->>API: GET /users/me
+    API-->>Pay: Verified buyer identity
+    Pay->>API: GET /orders/payments/{order_id}/
+    API-->>Pay: Authorized order and line items
+    Pay->>Pay: Require status = pending
+    Pay->>Stripe: Create card Checkout Session
+    Stripe-->>Pay: Session ID and hosted URL
+    Pay-->>Web: checkout_url + session_id
+    Web->>Stripe: Redirect customer
+    Customer->>Stripe: Complete card payment
+    Stripe-->>Web: Redirect to success URL
+    Stripe->>Pay: checkout.session.completed webhook
+    Pay->>Pay: Verify signature and required metadata
+    Pay->>API: PATCH /orders/payments/{order_id}/complete/<br/>Session ID + Payment Intent ID
+    API->>DB: Persist completed payment / domain updates
+    API-->>Pay: Updated order
+    Pay-->>Stripe: 200 received
 ```
 
----
+The service does not activate tickets directly. It reports verified Stripe identifiers to Django, which owns the resulting order and ticket state transitions.
 
-# 🚀 Getting Started
+## Stripe integration
 
-## Clone the repository
+### Checkout Sessions
+
+Sessions use `mode: payment` and support cards. Each Django order item becomes Stripe `price_data` with its ticket type as the product name. The implementation does not create persistent Stripe Price or Product records.
+
+### Metadata and references
+
+The Django order ID is copied to `client_reference_id` and `metadata.order_id`. The webhook uses metadata to correlate the completed Checkout Session with the internal order.
+
+### Payment Intents
+
+Stripe creates the Payment Intent as part of Checkout. This service does not create or retrieve Payment Intents directly; it validates that the completed session contains a string Payment Intent ID and forwards that ID to Django.
+
+### Webhooks
+
+Only `checkout.session.completed` changes application state. The endpoint requires the `Stripe-Signature` header and validates it with `STRIPE_WEBHOOK_SECRET` against the raw payload.
+
+## Security model
+
+The service applies different controls at each trust boundary. They are intentionally narrow and reflect the controls present in the code today.
+
+| Boundary | Implemented control |
+|---|---|
+| Browser → payments service | CORS allows `http://localhost:5173`; protected endpoints require a `Bearer` header. |
+| Payments service → identity API | `requireAuth` forwards the caller's token to Django `/users/me`, then requires the `buyer` role and a verified email. |
+| Payments service → order/ticket API | The original bearer token is forwarded so Django can enforce resource-level access and ownership. |
+| Payments service → Stripe | `STRIPE_SECRET_KEY` remains server-side and is used by the Stripe SDK. |
+| Stripe → webhook | `stripe.webhooks.constructEvent` verifies the signature over the raw request body before event fields are read. |
+| Webhook → Django | A separate `DJANGO_API_TOKEN` authorizes the internal order-completion request. |
+
+This is a least-privilege split at the credential level: user tokens are used for user-scoped reads, while the service credential is confined to the internal Axios client used for order completion. The browser never receives the Stripe secret key or Django service token. Django remains the authority for ownership and domain-state changes.
+
+Secrets and integration addresses are read from environment variables rather than source literals. The CORS origin and Checkout redirect URLs, however, are currently hard-coded for local development; transport security, credential rotation, rate limiting, and production origin management are outside this implementation.
+
+> [!IMPORTANT]
+> Replace the local origin and redirect configuration with environment-driven production values before deploying this service beyond the local TicketFlow stack.
+
+## API overview
+
+### Service status
+
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| `GET` | `/` | Public | Return the service name and `running` status |
+
+This is a process-status response, not a dependency-aware readiness check.
+
+### Payments
+
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| `POST` | `/payment/create-checkout-session` | Verified buyer | Validate an order and create a Stripe Checkout Session |
+
+```http
+POST /payment/create-checkout-session
+Authorization: Bearer <access-token>
+Content-Type: application/json
+
+{
+  "order_id": "<order-id>"
+}
+```
+
+### Stripe webhooks
+
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| `POST` | `/webhook` | Valid Stripe signature | Complete the correlated Django order for `checkout.session.completed` |
+
+The endpoint expects `application/json`, but signature verification requires the original raw bytes rather than a parsed JSON object.
+
+### Tickets
+
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| `GET` | `/api/tickets/:ticketId/pdf` | Verified buyer | Retrieve an authorized ticket and return its generated PDF |
+
+```http
+GET /api/tickets/<ticket-id>/pdf
+Authorization: Bearer <access-token>
+```
+
+## Environment variables
+
+Create a local `.env` file in the service root. Never commit real keys or tokens.
+
+```env
+PORT=5001
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+DJANGO_API=http://localhost:8000/api
+DJANGO_API_TOKEN=<internal-service-token>
+```
+
+| Variable | Required by the implementation | Purpose |
+|---|---:|---|
+| `PORT` | No | Listener port; defaults to `5001` |
+| `STRIPE_SECRET_KEY` | Yes | Server-side Stripe client authentication |
+| `STRIPE_WEBHOOK_SECRET` | Yes | Signature verification for `/webhook` |
+| `DJANGO_API` | Yes | Base URL for identity, order, and ticket requests |
+| `DJANGO_API_TOKEN` | Yes | Service credential for completing orders after webhooks |
+| `STRIPE_PUBLISHABLE_KEY` | No | Present in the local environment convention but not read by this backend |
+
+> [!NOTE]
+> Environment values are loaded by the Stripe and Django service modules. The application currently performs no startup-time schema validation, so missing required values surface when the affected integration is used.
+
+## Local development
+
+### Prerequisites
+
+- Node.js 22 and npm
+- A reachable TicketFlow Django API with the expected user, payment-order, and ticket endpoints
+- Stripe test credentials and a webhook signing secret
+
+### Install and run
+
+1. Clone the repository and enter the service directory.
 
 ```bash
-git clone https://github.com/yourusername/ticketflow.git
-```
-
----
-
-## Navigate to the payments service
-
-```bash
+git clone <repository-url>
 cd ticketflow/payments
 ```
 
----
-
-## Install dependencies
+2. Install dependencies.
 
 ```bash
 npm install
 ```
 
----
-
-## Run locally
+3. Create `.env` using the [environment variable reference](#environment-variables), then start the watcher.
 
 ```bash
 npm run dev
 ```
 
-The server starts on
+The API listens on `http://localhost:5001` unless `PORT` is set.
 
-```
-http://localhost:5001
-```
+Available scripts:
 
----
+| Command | Behavior |
+|---|---|
+| `npm run dev` | Run `src/server.ts` with file watching |
+| `npm start` | Run `src/server.ts` once through `tsx` |
 
-# 🐳 Docker
+No automated test script or committed Stripe CLI configuration is currently included. To exercise webhooks locally, configure Stripe to deliver test events to `POST /webhook` and set the matching endpoint signing secret as `STRIPE_WEBHOOK_SECRET`.
 
-The payment service is designed to run alongside the Django backend and PostgreSQL using Docker Compose.
+### Local integration checklist
 
-Start the entire application:
+| Check | Why it matters |
+|---|---|
+| `STRIPE_WEBHOOK_SECRET` matches the endpoint delivering local events | A Stripe API secret and a webhook signing secret are different credentials; the wrong value produces `400 Invalid webhook signature.` |
+| `DJANGO_API_TOKEN` is accepted by Django | The signed webhook can be valid while order completion still fails with `500` if service authentication is rejected. |
+| Django is reachable at `DJANGO_API` | Authentication, order validation, and ticket retrieval all depend on this base URL. |
+| The frontend runs at `http://localhost:5173` | This is the only configured CORS origin and the target of both Checkout redirects. |
+| The webhook target includes `/webhook` | The raw-body parser and Stripe handler are mounted only at this path. |
 
-```bash
-docker compose up --build
-```
+## Docker
 
-The Payments API will be available at
-
-```
-http://localhost:5001
-```
-
----
-
-# ⚙ Environment Variables
-
-| Variable | Description |
-|-----------|-------------|
-| PORT | Express server port |
-| STRIPE_SECRET_KEY | Stripe Secret Key |
-| STRIPE_WEBHOOK_SECRET | Stripe Webhook Secret |
-| DJANGO_API | Django API Base URL |
-| DJANGO_API_TOKEN | Internal Service Token |
-
-Example:
-
-```env
-PORT=5001
-
-DJANGO_API=http://api:8000/api/v1
-DJANGO_API_TOKEN=your-service-token
-
-STRIPE_SECRET_KEY=sk_test_...
-
-STRIPE_WEBHOOK_SECRET=whsec_...
-```
-
----
-
-# 🔒 Security
-
-The payment service was designed following the principle of **least privilege**.
-
-## User Requests
-
-Authenticated users communicate with Django using their own JWT access token.
-
-```
-Authorization: Bearer <JWT>
-```
-
-Only the owner of an order or ticket can access those resources.
-
----
-
-## Internal Requests
-
-Webhook operations use a dedicated service token instead of a user JWT.
-
-```
-X-Service-Token
-```
-
-This allows Stripe webhooks to perform privileged operations without exposing user credentials.
-
----
-
-# Design Goals
-
-The payment service follows several architectural principles:
-
-- Separation of concerns
-- Thin controllers
-- Service-oriented architecture
-- Principle of least privilege
-- Secure communication
-- Stateless design
-- Production-ready Docker support
-- Clear responsibility boundaries
-
-```
-# 📡 API Reference
-
-The Payments Service exposes four REST endpoints.
-
-| Method | Endpoint | Authentication | Description |
-|----------|-----------------------------|-----------------|-------------------------------|
-| GET | `/` | ❌ | Health Check |
-| POST | `/payment/create-checkout-session` | ✅ Buyer | Creates a Stripe Checkout Session |
-| GET | `/api/tickets/:ticketId/pdf` | ✅ Buyer | Downloads a PDF Ticket |
-| POST | `/webhook` | Stripe Signature | Processes Stripe Webhooks |
-
----
-
-# Health Check
-
-## GET /
-
-Returns the service status.
-
-### Request
-
-No authentication required.
-
-### Response
-
-```json
-{
-    "service": "TicketFlow Payments API",
-    "status": "running"
-}
-```
-
-### Example
+Build and run the service from this directory:
 
 ```bash
-curl http://localhost:5001/
+docker build -t ticketflow-payments .
+docker run --rm --env-file .env -p 5001:5001 ticketflow-payments
 ```
 
----
-
-# 💳 Create Checkout Session
-
-## POST /payment/create-checkout-session
-
-Creates a Stripe Checkout Session for an existing **pending** order.
-
-Only authenticated buyers are allowed to create checkout sessions.
-
----
-
-## Authentication
-
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
----
-
-## Request Body
-
-```json
-{
-    "order_id": "5ef983d0-cd2e-4f7d-a60e-c48efca9e390"
-}
-```
-
----
-
-## Success Response
-
-Status
-
-```text
-200 OK
-```
-
-```json
-{
-    "checkout_url": "https://checkout.stripe.com/c/pay/cs_test_xxxxxxxxx",
-    "session_id": "cs_test_xxxxxxxxx"
-}
-```
-
-The frontend should redirect the user directly to
-
-```text
-checkout_url
-```
-
----
-
-## Possible Errors
-
-### Missing order id
-
-```text
-400 Bad Request
-```
-
-```json
-{
-    "message": "order_id is required."
-}
-```
-
----
-
-### Order already paid
-
-```text
-409 Conflict
-```
-
-```json
-{
-    "message": "Order is no longer pending."
-}
-```
-
----
-
-### Invalid Token
-
-```text
-401 Unauthorized
-```
-
-```json
-{
-    "message": "Invalid or expired token."
-}
-```
-
----
-
-### Order not found
-
-```text
-404 Not Found
-```
-
-```json
-{
-    "message": "Order not found."
-}
-```
-
----
-
-### Forbidden
-
-```text
-403 Forbidden
-```
-
-Returned if the authenticated buyer attempts to access another buyer's order.
-
----
-
-#  Download Ticket
-
-## GET
-
-```text
-/api/tickets/:ticketId/pdf
-```
-
-Downloads a printable PDF version of the ticket.
-
----
-
-## Authentication
-
-```http
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
----
-
-## URL Parameters
-
-| Parameter | Description |
-|------------|-------------|
-| ticketId | Ticket UUID |
-
-Example
-
-```text
-/api/tickets/99ec6d62-5923-4f2f-b6d5-39bd87d53ea2/pdf
-```
-
----
-
-## Success Response
-
-Status
-
-```text
-200 OK
-```
-
-Headers
-
-```http
-Content-Type: application/pdf
-Content-Disposition: attachment;
-```
-
-Body
-
-```
-Binary PDF File
-```
-
----
-
-## Security
-
-This endpoint performs ownership verification.
-
-Only the owner of the ticket can download it.
-
-Attempting to access another user's ticket returns
-
-```text
-403 Forbidden
-```
-
----
-
-## PDF Contents
-
-Each ticket contains
-
-- Event Cover Image
-- Event Title
-- Ticket Type
-- Owner Name
-- Purchase Date
-- Ticket ID
-- QR Code
-- Ticket Status
-
----
-
-## Possible Errors
-
-### Invalid token
-
-```text
-401 Unauthorized
-```
-
----
-
-### Ticket not found
-
-```text
-404 Not Found
-```
-
----
-
-### Forbidden
-
-```text
-403 Forbidden
-```
-
----
-
-### Internal error
-
-```text
-503 Service Unavailable
-```
-
----
-
-# 🔄 Stripe Webhook
-
-## POST
-
-```text
-/webhook
-```
-
-Receives payment events directly from Stripe.
-
-This endpoint **must never** be called by frontend applications.
-
----
-
-## Authentication
-
-Unlike other endpoints, this route does **not** use JWT authentication.
-
-Instead Stripe authenticates itself using the webhook signature.
-
-```
-Stripe
-      │
-stripe-signature
-      │
-      ▼
-Payments Service
-```
-
----
-
-## Required Header
-
-```http
-Stripe-Signature
-```
-
----
-
-## Supported Events
-
-Currently supported
-
-```
-checkout.session.completed
-```
-
----
-
-## Processing Flow
-
-When Stripe confirms a successful payment
-
-1. Verify webhook signature
-2. Read Checkout Session
-3. Extract Order ID
-4. Call Django
-5. Complete Order
-6. Generate Tickets
-7. Return success
-
----
-
-## Success Response
-
-```json
-{
-    "received": true
-}
-```
-
----
-
-## Possible Errors
-
-### Missing signature
-
-```text
-400 Bad Request
-```
-
-```
-Missing Stripe signature.
-```
-
----
-
-### Invalid signature
-
-```text
-400 Bad Request
-```
-
-```
-Invalid webhook signature.
-```
-
----
-
-### Missing order id
-
-```text
-400 Bad Request
-```
-
-```
-Missing order ID.
-```
-
----
-
-# 🔄 Complete Payment Flow
-
-```mermaid
-sequenceDiagram
-
-participant Buyer
-participant Frontend
-participant Payments
-participant Django
-participant Stripe
-
-Buyer->>Frontend: Click Pay
-
-Frontend->>Payments: Create Checkout Session
-
-Payments->>Django: Fetch Order
-
-Django-->>Payments: Pending Order
-
-Payments->>Stripe: Create Checkout Session
-
-Stripe-->>Frontend: Hosted Checkout
-
-Buyer->>Stripe: Complete Payment
-
-Stripe->>Payments: Webhook
-
-Payments->>Django: Complete Order
-
-Django-->>Payments: Order Paid
-
-Payments-->>Stripe: 200 OK
-```
-
----
-
-# 🎫 Ticket Download Flow
-
-```mermaid
-sequenceDiagram
-
-participant Buyer
-
-participant Frontend
-
-participant Payments
-
-participant Django
-
-Buyer->>Frontend: Download Ticket
-
-Frontend->>Payments: GET Ticket PDF
-
-Payments->>Django: Verify Ownership
-
-Django-->>Payments: Ticket Data
-
-Payments->>Payments: Generate PDF
-
-Payments-->>Frontend: PDF File
-```
-
----
-
-# 🔐 Authentication Flow
-
-Protected endpoints use the authenticated user's JWT.
-
-```text
-React
-     │
-Bearer Token
-     ▼
-Payments API
-     │
-Bearer Token
-     ▼
-Django API
-```
-
-Django validates
-
-- Authentication
-- User Role
-- Email Verification
-- Resource Ownership
-
-No authorization decisions are made inside Express.
-
-Business rules always remain inside Django.
-
----
-
-# 🛡 Authorization Matrix
-
-| Endpoint | Buyer | Organizer | Admin | Anonymous |
-|------------|--------|------------|--------|------------|
-| Health | ✅ | ✅ | ✅ | ✅ |
-| Checkout Session | ✅ | ❌ | ❌ | ❌ |
-| Download Ticket | ✅ Owner Only | ❌ | ❌ | ❌ |
-| Webhook | Stripe Only | Stripe Only | Stripe Only | ❌ |
-
----
-
-# ⚠ Error Handling
-
-| Status | Meaning |
-|----------|--------------------------|
-| 200 | Success |
-| 400 | Invalid request |
-| 401 | Authentication failed |
-| 403 | Permission denied |
-| 404 | Resource not found |
-| 409 | Order already processed |
-| 500 | Internal server error |
-| 503 | External service unavailable |
-# 🔒 Security
-
-Security was one of the primary design goals of the TicketFlow Payments Service.
-
-Rather than relying solely on the payment service for authorization, all business-critical authorization decisions remain inside the Django backend.
-
----
-
-## JWT Authentication
-
-Protected routes require a valid JWT access token.
-
-```
-Authorization: Bearer <ACCESS_TOKEN>
-```
-
-The payment service forwards the token to Django, which verifies:
-
-- User identity
-- Token validity
-- Email verification
-- User role
-- Resource ownership
-
-This ensures authorization logic exists in a single place.
-
----
-
-## Role-Based Authorization
-
-Only authenticated buyers can perform payment operations.
-
-| Role | Checkout | Download Ticket |
-|------|----------|-----------------|
-| Buyer | ✅ | ✅ Own Tickets |
-| Organizer | ❌ | ❌ |
-| Admin | ❌ | ❌ |
-| Anonymous | ❌ | ❌ |
-
----
-
-## Ownership Validation
-
-Even with a valid JWT, users cannot access resources that do not belong to them.
-
-Examples:
-
-- Buyers cannot pay another user's order.
-- Buyers cannot download another user's ticket.
-
-Ownership verification is always performed by Django.
-
----
-
-## Service-to-Service Authentication
-
-Webhook operations are not performed on behalf of a user.
-
-Instead, the payment service authenticates itself using an internal service token.
-
-```
-Payments Service
-        │
-X-Service-Token
-        ▼
-Django API
-```
-
-This prevents exposing privileged operations through public endpoints.
-
----
-
-## Stripe Webhook Verification
-
-Incoming webhook requests are verified using the Stripe SDK.
-
-```
-Stripe
-      │
-Webhook Signature
-      ▼
-Payments Service
-```
-
-Invalid signatures are rejected before any business logic is executed.
-
----
-
-# 🐳 Docker Deployment
-
-The service is designed to run inside Docker alongside the Django backend.
-
-Example architecture
-
-```text
-                    Docker Network
-
-+-------------+      +-------------+      +--------------+
-| React (Vite)| ---> |  Payments   | ---> |    Django    |
-+-------------+      +-------------+      +--------------+
-                             |
-                             |
-                             ▼
-                       +-------------+
-                       |   Stripe    |
-                       +-------------+
-```
-
-The payment service communicates with Django using the Docker service hostname.
-
-Example
-
-```env
-DJANGO_API=http://api:8000/api/v1
-```
-
----
-
-# ⚙ Configuration
-
-Environment variables
-
-| Variable | Required | Description |
-|------------|----------|----------------------------|
-| PORT | ✅ | Express server port |
-| DJANGO_API | ✅ | Django API URL |
-| DJANGO_API_TOKEN | ✅ | Internal service token |
-| STRIPE_SECRET_KEY | ✅ | Stripe Secret Key |
-| STRIPE_WEBHOOK_SECRET | ✅ | Stripe Webhook Secret |
-
----
-
-# 🧪 Testing
-
-The service can be tested using Postman or the Stripe CLI.
-
----
-
-## Health Check
-
-```bash
-curl http://localhost:5001/
-```
-
----
-
-## Create Checkout Session
-
-```bash
-curl -X POST http://localhost:5001/payment/create-checkout-session \
--H "Authorization: Bearer ACCESS_TOKEN" \
--H "Content-Type: application/json" \
--d '{
-  "order_id":"YOUR_ORDER_ID"
-}'
-```
-
----
-
-## Download Ticket
-
-```bash
-curl -OJ \
--H "Authorization: Bearer ACCESS_TOKEN" \
-http://localhost:5001/api/tickets/TICKET_ID/pdf
-```
-
----
-
-## Test Stripe Webhook
-
-Install Stripe CLI
-
-```bash
-stripe login
-```
-
-Forward webhook events
-
-```bash
-stripe listen \
---forward-to localhost:5001/webhook
-```
-
-Trigger a payment event
-
-```bash
-stripe trigger checkout.session.completed
-```
-
----
-
-# 👨‍💻 Author
-
-**Ahmed Özdoğan**
-
-Full-Stack Developer
-
-### Technologies
-
-- TypeScript
-- React
-- React Native
-- Django
-- Express.js
-- PostgreSQL
-- Docker
-- Stripe
-- CI/CD
-
-
-# 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-#  Project Highlights
-
-This project demonstrates experience with:
-
-- Designing secure microservice architectures
-- Stripe Checkout integration
-- JWT authentication
-- Role-based authorization
-- Service-to-service authentication
-- PDF generation
-- QR code generation
-- Docker networking
-- Express.js
-- TypeScript
-- REST API design
-- Secure webhook processing
-- Production-ready backend architecture
-
----
-
-<p align="center">
-
-**Built with using TypeScript, Express, Stripe and Django**
-
- If you found this project interesting, consider giving it a star ⭐!
-
-</p>
+The container exposes `5001` and currently runs `npm run dev`, including watch mode. No Compose file is included in this directory; orchestration with Django and the frontend must be supplied by the parent stack or deployment platform.
+
+## Error handling
+
+Controllers form the translation boundary between provider-specific failures and stable HTTP responses. Axios response statuses from Django are mapped to payment- or ticket-specific messages; Stripe and unexpected runtime errors fall back to controlled `5xx` responses without returning provider error objects.
+
+| Condition | Response |
+|---|---|
+| Missing `order_id`, Stripe signature, order metadata, or Payment Intent ID | `400` |
+| Invalid or expired user token | `401` |
+| Wrong role, unverified email, or denied resource access | `403` |
+| Order or ticket not found | `404` |
+| Order is not pending | `409` |
+| Django authentication dependency unavailable | `503` |
+| Stripe creation, order completion, or unexpected processing failure | `500` / route-specific `5xx` |
+
+| Area | Translation behavior |
+|---|---|
+| Authentication middleware | Missing bearer headers return `401`; Django identity failures return `401`; connection or non-response failures return `503`. |
+| Checkout controller | Known Django `400`, `401`, `403`, and `404` statuses become domain-oriented messages; a non-pending order becomes `409`; other failures become `500`. |
+| Ticket controller | Django `401`, `403`, and `404` responses retain their status with ticket-specific messages; non-Axios failures become `503`. |
+| Webhook controller | Missing or invalid signatures and incomplete event data return plain-text `400`; Django completion failure returns plain-text `500`. |
+
+Application endpoints return compact JSON messages. The webhook uses plain text for rejected delivery data and returns `{ "received": true }` after accepted events. Unhandled event types are logged and acknowledged without side effects.
+
+## Engineering decisions
+
+The central design decision is ownership: Stripe owns payment execution, Django owns TicketFlow business state, and this service translates between them. Checkout creation begins with a Django-authorized order rather than client-provided prices. Webhook completion returns provider evidence to the domain API rather than writing directly to its database.
+
+| Decision | Implementation | Engineering effect |
+|---|---|---|
+| Thin controllers | Controllers validate HTTP input, call service functions, and map responses. | Provider workflows remain testable and replaceable independently of Express routing. |
+| Explicit service layer | Stripe, Django, and PDF concerns occupy separate modules. | SDK and transport dependencies do not spread through controllers or route definitions. |
+| Provider isolation | Only Stripe configuration and service/webhook code use the Stripe SDK. | The Django domain API stays independent of Stripe request construction and signatures. |
+| Trusted pricing source | Checkout line items are built from the order retrieved from Django. | Browser input selects an order but does not supply authoritative currency, quantity, or price data. |
+| Bearer-token forwarding | User-scoped Axios requests reuse the incoming authorization header. | Django retains identity, ownership, and resource-authorization decisions. |
+| Separate service credential | `serviceApi` attaches `DJANGO_API_TOKEN` only to internal completion calls. | User and machine trust paths remain distinct. |
+| Raw webhook body | `/webhook` mounts `express.raw()` before the global JSON parser. | Stripe can verify the signature against the exact bytes it signed. |
+| In-memory PDF pipeline | Axios fetches artwork, Sharp normalizes it, QRCode generates a PNG, and pdf-lib composes the response. | Ticket generation creates no temporary files or persistent filesystem state. |
+| Dependency direction | Routes compose middleware/controllers; controllers call services; services call providers. | Higher-level HTTP code does not leak into integration modules. |
+
+These boundaries are deliberately lightweight rather than framework-driven. Each module has a narrow reason to change, while Django continues to own business rules and persisted state.
+
+## Future improvements
+
+> [!NOTE]
+> The items below are a production roadmap, not implemented capabilities.
+
+1. Add Stripe idempotency keys to Checkout creation and idempotent order-completion semantics in Django.
+2. Persist processed Stripe event IDs to make duplicate delivery handling explicit.
+3. Move webhook work to a durable queue with bounded retries and dead-letter handling.
+4. Add dependency-aware readiness checks alongside the existing process-status endpoint.
+5. Validate environment variables at startup and make CORS and redirect URLs configurable.
+6. Add structured logging, request correlation, metrics, alerts, and payment-flow tracing.
+7. Add contract, integration, webhook replay, and PDF-generation tests.
+8. Harden the container with deterministic installs, a production build, a non-root user, and a production start command.
+9. Extend the payment lifecycle with refunds only after the Django order model defines the relevant policies and states.
+
+## Portfolio value
+
+For an engineering reviewer, this service shows more than a basic Stripe SDK call. It demonstrates the ability to define service boundaries, preserve domain ownership across a polyglot system, separate human and machine credentials, and design an asynchronous payment-completion path around signed webhooks.
+
+The implementation provides concrete evidence of experience with:
+
+- Node.js, Express 5, and strict TypeScript
+- Stripe Checkout and cryptographically verified webhooks
+- REST integration across independently deployed services
+- User-scoped authorization and server-to-server authentication
+- Payment-state synchronization and failure mapping
+- Dynamic PDF, QR code, and image processing pipelines
+- Dockerized local execution and environment-based secret management
+- Clear separation between transport, integration, and domain boundaries
