@@ -4,6 +4,12 @@ from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
 
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/events/", include("apps.events.urls")),
@@ -11,6 +17,27 @@ urlpatterns = [
     path("api/v1/users/", include("apps.users.urls")),
     #path("api/v1/payments/", include("apps.payments.urls")),
     #path("api/v1/tickets/", include("apps.tickets.urls")),
+
+     path(
+        "api/schema/",
+        SpectacularAPIView.as_view(),
+        name="schema",
+    ),
+
+    path(
+
+        "api/schema/swagger/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+
+    path(
+
+        "api/schema/redoc/",
+        SpectacularRedocView.as_view(url_name="schema"),
+        name="redoc",
+
+    ),
 ]
 
 if settings.DEBUG:

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'django_filters',
+    "drf_spectacular",
     'apps.users',
     'apps.events',
     'apps.orders',
@@ -121,6 +122,42 @@ REST_FRAMEWORK = {
 
     "DEFAULT_PAGINATION_CLASS": "apps.events.paginations.DefaultPagination",
     "PAGE_SIZE": 20,
+
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "TicketFlow API",
+    "DESCRIPTION": "REST API for the TicketFlow event management platform.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SERVERS": [
+        {"url": "http://localhost:8000", "description": "Development"},
+    ],
+    "CONTACT": {
+        "name": "Ahmed Özdoğan",
+        "email": "ahmeddozdogan@gmail.com",
+    },
+
+    "TAGS": [
+        {"name": "Authentication"},
+        {"name": "Events"},
+        {"name": "Orders"},
+        {"name": "Tickets"},
+        {"name": "Users"},
+        {"name": "Admin"},
+    ],
+
+    "SECURITY": [
+            {
+                "BearerAuth": [],
+            }
+        ],
+        "COMPONENT_SPLIT_REQUEST": True,
+
+    "LICENSE": {
+        "name": "MIT",
+    },
 }
 
 AUTHENTICATION_BACKENDS = [
