@@ -2,7 +2,7 @@ const stats = [
     { label: 'Events created', value: '2.4K+' },
     { label: 'Tickets issued', value: '180K+' },
     { label: 'Payment success rate', value: '98%' },
-    { label: 'Average check-in time', value: '4s' },
+    { label: 'Average check-in time', value: '4 Seconds' },
 ];
 
 export function StatsSection() {

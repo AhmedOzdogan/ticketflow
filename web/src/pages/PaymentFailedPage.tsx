@@ -62,8 +62,7 @@ export default function PaymentFailedPage() {
                                 </h3>
 
                                 <p className="mt-2 text-sm text-muted">
-                                    Create a new order and try your payment
-                                    again. Temporary issues are usually resolved
+                                    Go to my orders and try paying again. If you changed your mind you can always cancel your order as well.
                                     quickly.
                                 </p>
                             </div>

@@ -222,7 +222,10 @@ const CheckoutPage = () => {
                                     <div className="flex items-center gap-2">
                                         <FiCalendar className="text-primary" />
                                         <span>
-                                            {event.start_date}
+                                            {new Date(event.start_date).toLocaleString(undefined, {
+                                                dateStyle: 'medium',
+                                                timeStyle: 'short',
+                                            })}
                                         </span>
                                     </div>
 

@@ -33,6 +33,7 @@ function App() {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/events/:slug" element={<EventDetailPage />} />
+        <Route path="/feature-preview" element={<FeaturePreview />} />
 
         {/* Authenticated users */}
         <Route element={<RequireRole />}>
@@ -46,10 +47,6 @@ function App() {
 
         {/* Organizers */}
         <Route element={<RequireRole allowedRoles={['organizer', 'admin']} />}>
-          <Route
-            path="/organizer/feature-preview"
-            element={<FeaturePreview />}
-          />
           <Route
             path="/organizer/create-event"
             element={<CreateEventsPage />}

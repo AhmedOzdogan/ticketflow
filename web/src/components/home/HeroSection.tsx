@@ -3,7 +3,7 @@ import { Button } from '../ui/Button';
 import type { EventListPublicItem } from '../../types/events';
 import { EventCard } from '../ui/EventCard';
 import { Loading } from '../ui/Loading';
-
+import { useNavigate } from 'react-router-dom';
 
 type HeroSectionProps = {
     featuredEvent?: EventListPublicItem;
@@ -11,6 +11,7 @@ type HeroSectionProps = {
 };
 
 export function HeroSection({ featuredEvent, loading }: HeroSectionProps) {
+    const navigate = useNavigate()
 
     return (
         <section className="relative overflow-hidden bg-background px-4 pt-6 pb-8 sm:px-6 lg:px-8 lg:pt-4 lg:pb-14">
@@ -33,11 +34,11 @@ export function HeroSection({ featuredEvent, loading }: HeroSectionProps) {
                     </p>
 
                     <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                        <Button size="lg">
+                        <Button size="lg" onClick={() => { navigate('/organizer/create-event') }}>
                             Create event
                             <FiArrowRight className="size-5" />
                         </Button>
-                        <Button variant="outline" size="lg">
+                        <Button variant="outline" size="lg" onClick={() => { navigate('/events') }}>
                             Explore events
                         </Button>
                     </div>

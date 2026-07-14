@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiSearch, FiSliders } from 'react-icons/fi';
+import { FiSearch } from 'react-icons/fi';
 import { getEvents } from '../api/eventApi';
 import type { PublicEventListPaginatedResponse } from '../types/events';
 import EventCard from '../components/ui/EventCard';
@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import Pagination from '../components/ui/Pagination'
+import { useNavigate } from 'react-router-dom';
 
 const categories = [
     { label: 'All', value: 'All' },
@@ -19,6 +20,8 @@ const categories = [
 ];
 
 function Events() {
+    const navigate = useNavigate()
+
     const [response, setResponse] = useState<PublicEventListPaginatedResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -93,8 +96,8 @@ function Events() {
                                 </p>
 
                                 <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-                                    <Button size="lg">Explore events</Button>
-                                    <Button variant="outline" size="lg">Create an event</Button>
+                                    <Button size="lg" onClick={() => { navigate('/my-orders') }} >My orders</Button>
+                                    <Button variant="outline" size="lg" onClick={() => { navigate('/organizer/create-event') }}>Create an event</Button>
                                 </div>
                             </div>
 
@@ -143,11 +146,6 @@ function Events() {
                                     {label}
                                 </button>
                             ))}
-
-                            <Button variant="outline" size="sm">
-                                <FiSliders className="size-4" />
-                                Filters
-                            </Button>
                         </div>
                     </div>
                 </section>
