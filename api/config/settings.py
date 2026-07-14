@@ -194,6 +194,18 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": config(
+            "REDIS_URL",
+            default="redis://redis:6379/1",
+        ),
+        "KEY_PREFIX": "ticketflow",
+        "TIMEOUT": 300,
+    }
+}
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
