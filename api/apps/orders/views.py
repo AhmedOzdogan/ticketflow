@@ -29,12 +29,38 @@ from django.db import transaction
 from django.utils import timezone
 from .permissions import IsPaymentService
 from apps.events.models import TicketType
+from drf_spectacular.utils import (
+    OpenApiResponse,
+    extend_schema,
+    extend_schema_view,
+)
 
+
+@extend_schema(
+    tags=["Orders"],
+    summary="Create order",
+    description="Creates a pending order for the authenticated user before redirecting to Stripe Checkout.",
+    request=OrderCreateSerializer,
+    responses={
+        201: OrderSerializer,
+        400: OpenApiResponse(description="Invalid order data."),
+        401: OpenApiResponse(description="Authentication required."),
+    },
+)
 class OrderCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderCreateSerializer
 
 
+@extend_schema(
+    tags=["Orders"],
+    summary="List orders",
+    description="Returns the authenticated user's orders. Organizers receive orders for their own events. Administrators receive all orders.",
+    responses={
+        200: OrderSerializer,
+        401: OpenApiResponse(description="Authentication required."),
+    },
+)
 class OrderListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
@@ -79,6 +105,16 @@ class OrderListView(generics.ListAPIView):
         return queryset.filter(user=user)
 
 
+@extend_schema(
+    tags=["Orders"],
+    summary="Get order",
+    description="Returns a single order belonging to the authenticated user.",
+    responses={
+        200: OrderSerializer,
+        401: OpenApiResponse(description="Authentication required."),
+        404: OpenApiResponse(description="Order not found."),
+    },
+)
 class OrderDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
@@ -91,7 +127,15 @@ class OrderDetailView(generics.RetrieveAPIView):
             .prefetch_related("items__ticket_type")
         )
 
-
+@extend_schema(
+    tags=["Tickets"],
+    summary="List tickets",
+    description="Returns tickets belonging to the authenticated user. Organizers receive tickets for their events. Administrators receive all tickets.",
+    responses={
+        200: TicketSerializer,
+        401: OpenApiResponse(description="Authentication required."),
+    },
+)
 class TicketListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = TicketSerializer
@@ -141,7 +185,16 @@ class TicketListView(generics.ListAPIView):
 
         return queryset
 
-
+@extend_schema(
+    tags=["Tickets"],
+    summary="Download ticket",
+    description="Returns the ticket data required to generate or download a PDF ticket.",
+    responses={
+        200: TicketPdfSerializer,
+        401: OpenApiResponse(description="Authentication required."),
+        404: OpenApiResponse(description="Ticket not found."),
+    },
+)
 class TicketDownloadView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = TicketPdfSerializer
@@ -155,6 +208,19 @@ class TicketDownloadView(generics.RetrieveAPIView):
     )
 
 
+@extend_schema(
+    tags=["Tickets"],
+    summary="Check in ticket",
+    description="Marks a ticket as used by scanning its QR code.",
+    request=TicketScanSerializer,
+    responses={
+        200: TicketScanSerializer,
+        400: OpenApiResponse(description="Ticket cannot be checked in."),
+        401: OpenApiResponse(description="Authentication required."),
+        403: OpenApiResponse(description="Organizer or administrator access required."),
+        404: OpenApiResponse(description="Ticket not found."),
+    },
+)
 class TicketScanView(generics.UpdateAPIView):
     permission_classes = [
         permissions.IsAuthenticated,
@@ -194,6 +260,16 @@ class TicketScanView(generics.UpdateAPIView):
         return Response(serializer.data)
 
 
+@extend_schema(
+    tags=["Orders"],
+    summary="Get payment order",
+    description="Returns an order before creating a Stripe Checkout Session.",
+    responses={
+        200: OrderSerializer,
+        401: OpenApiResponse(description="Authentication required."),
+        404: OpenApiResponse(description="Order not found."),
+    },
+)
 class PaymentOrderDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = OrderSerializer
@@ -205,7 +281,17 @@ class PaymentOrderDetailView(generics.RetrieveAPIView):
             .prefetch_related("items__ticket_type")
         )
 
-
+@extend_schema(
+    tags=["Orders"],
+    summary="Complete payment",
+    description="Marks an order as paid after a successful Stripe webhook and generates the purchased tickets.",
+    responses={
+        200: OpenApiResponse(description="Payment completed successfully."),
+        401: OpenApiResponse(description="Payment service authentication failed."),
+        404: OpenApiResponse(description="Order not found."),
+        409: OpenApiResponse(description="Order cannot be processed."),
+    },
+)
 class CompletePaymentView(generics.UpdateAPIView):
     authentication_classes=[]
     permission_classes = [IsPaymentService]
@@ -269,7 +355,32 @@ class CompletePaymentView(generics.UpdateAPIView):
             }
         )
 
-
+@extend_schema_view(
+    put=extend_schema(
+        tags=["Orders"],
+        summary="Cancel order",
+        description="Cancels a pending order belonging to the authenticated user.",
+        responses={
+            200: OpenApiResponse(description="Order cancelled successfully."),
+            400: OpenApiResponse(description="Only pending orders can be cancelled."),
+            401: OpenApiResponse(description="Authentication required."),
+            403: OpenApiResponse(description="Permission denied."),
+            404: OpenApiResponse(description="Order not found."),
+        },
+    ),
+    patch=extend_schema(
+        tags=["Orders"],
+        summary="Cancel order",
+        description="Cancels a pending order belonging to the authenticated user.",
+        responses={
+            200: OpenApiResponse(description="Order cancelled successfully."),
+            400: OpenApiResponse(description="Only pending orders can be cancelled."),
+            401: OpenApiResponse(description="Authentication required."),
+            403: OpenApiResponse(description="Permission denied."),
+            404: OpenApiResponse(description="Order not found."),
+        },
+    ),
+)
 class CancelOrderView(generics.UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = "id"
