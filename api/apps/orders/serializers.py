@@ -13,7 +13,6 @@ from apps.orders.models import (
     TicketStatus,
 )
 
-
 class OrderItemSerializer(serializers.ModelSerializer):
     ticket_type_id = serializers.UUIDField(
         source="ticket_type.id",
@@ -332,7 +331,7 @@ class TicketPdfSerializer(serializers.ModelSerializer):
             "owner_name",
         ]
 
-    def get_owner_name(self, obj):
+    def get_owner_name(self, obj)-> str:
         return obj.owner.get_full_name() or obj.owner.email
 
 
@@ -389,3 +388,8 @@ class TicketScanSerializer(serializers.ModelSerializer):
         instance.save(update_fields=["status", "used_at"])
 
         return instance
+
+
+class OrderStatusSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    status = serializers.CharField()

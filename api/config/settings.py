@@ -169,6 +169,21 @@ SPECTACULAR_SETTINGS = {
     "LICENSE": {
         "name": "MIT",
     },
+    "ENUM_NAME_OVERRIDES": {
+
+        "EventStatusEnum": "apps.events.models.Status",
+
+        "OrderStatusEnum": "apps.orders.models.OrderStatus",
+
+        "TicketStatusEnum": "apps.orders.models.TicketStatus",
+
+        "OrganizerApprovalStatusEnum": (
+
+            "apps.users.models.OrganizerApprovalStatus"
+
+        ),
+
+    },
 }
 
 AUTHENTICATION_BACKENDS = [

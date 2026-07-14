@@ -15,6 +15,7 @@ from .serializers import (
     TicketSerializer,
     TicketScanSerializer,
     TicketPdfSerializer,
+    OrderStatusSerializer,
 )
 from apps.users.permissions import IsAdmin, IsApprovedOrganizer
 from rest_framework.filters import SearchFilter
@@ -34,6 +35,7 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
 )
+from rest_framework import status
 
 
 @extend_schema(
@@ -88,6 +90,8 @@ class OrderListView(generics.ListAPIView):
     ordering = ["-created_at"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Order.objects.none()
         user = self.request.user
 
         queryset = (
@@ -163,6 +167,8 @@ class TicketListView(generics.ListAPIView):
     ordering = ["-created_at"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Ticket.objects.none()
         user = self.request.user
 
         queryset = Ticket.objects.select_related(
@@ -284,9 +290,10 @@ class PaymentOrderDetailView(generics.RetrieveAPIView):
 @extend_schema(
     tags=["Orders"],
     summary="Complete payment",
+    request=None,
     description="Marks an order as paid after a successful Stripe webhook and generates the purchased tickets.",
     responses={
-        200: OpenApiResponse(description="Payment completed successfully."),
+        200: OrderStatusSerializer,
         401: OpenApiResponse(description="Payment service authentication failed."),
         404: OpenApiResponse(description="Order not found."),
         409: OpenApiResponse(description="Order cannot be processed."),
@@ -360,8 +367,9 @@ class CompletePaymentView(generics.UpdateAPIView):
         tags=["Orders"],
         summary="Cancel order",
         description="Cancels a pending order belonging to the authenticated user.",
+        request=None,
         responses={
-            200: OpenApiResponse(description="Order cancelled successfully."),
+            200: OrderStatusSerializer,
             400: OpenApiResponse(description="Only pending orders can be cancelled."),
             401: OpenApiResponse(description="Authentication required."),
             403: OpenApiResponse(description="Permission denied."),
@@ -372,8 +380,9 @@ class CompletePaymentView(generics.UpdateAPIView):
         tags=["Orders"],
         summary="Cancel order",
         description="Cancels a pending order belonging to the authenticated user.",
+        request=None,
         responses={
-            200: OpenApiResponse(description="Order cancelled successfully."),
+            200: OrderStatusSerializer,
             400: OpenApiResponse(description="Only pending orders can be cancelled."),
             401: OpenApiResponse(description="Authentication required."),
             403: OpenApiResponse(description="Permission denied."),

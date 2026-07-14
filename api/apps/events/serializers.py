@@ -66,7 +66,7 @@ class EventListSerializer(serializers.ModelSerializer):
             "ticket_types"
         ]
 
-    def get_organizer_name(self, obj):
+    def get_organizer_name(self, obj)-> str:
         full_name = f"{obj.organizer.first_name} {obj.organizer.last_name}".strip()
         return full_name or obj.organizer.email
 
@@ -107,7 +107,7 @@ class EventDetailSerializer(serializers.ModelSerializer):
             "ticket_types",
         ]
 
-    def get_organizer_name(self, obj):
+    def get_organizer_name(self, obj) -> str:
         full_name = f"{obj.organizer.first_name} {obj.organizer.last_name}".strip()
         return full_name or obj.organizer.email
 

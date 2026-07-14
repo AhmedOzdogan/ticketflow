@@ -169,6 +169,9 @@ class EventListManageView(generics.ListAPIView):
     ordering = ["-created_at"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Event.objects.none()
+            
         if self.request.user.role == "admin":
             return Event.objects.select_related("organizer").prefetch_related("ticket_types")
 
